@@ -66,6 +66,7 @@ func main() {
 			default:
 				water, err = os.Stdin.Read(baketsu)
 				if err != nil {
+					// non-nil error when os.Stdin'slength < BUF_SIZE
 					lake = lake + len(bufio.NewScanner(os.Stdin).Bytes())
 					ef, es := truncByte(lake)
 					fmt.Printf("ALL: %.2f %s\n", round(ef, 2), es)
