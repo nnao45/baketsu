@@ -71,6 +71,7 @@ func round(f float64, places int) float64 {
 
 func main() {
 	v := new(Vessel)
+	mark := ""
 
 	stop := make(chan struct{}, 0)
 	received := make(chan struct{}, 0)
@@ -93,7 +94,6 @@ func main() {
 		}
 	}()
 
-	var mark string
 	for {
 		time.Sleep(1000 * time.Millisecond)
 		stop <- struct{}{}
