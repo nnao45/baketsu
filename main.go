@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"math"
@@ -10,6 +11,7 @@ import (
 )
 
 const (
+	UNIT_KBYTE = 1024
 	UNIT_MBYTE = 1048576
 	UNIT_GBYTE = 1073741824
 	UNIT_TBYTE = 1099511627776
@@ -18,7 +20,13 @@ const (
 const BUF_SIZE = UNIT_MBYTE * 500 // 500Mbytes
 
 func truncByte(i int) (f float64, s string) {
-	if i < UNIT_GBYTE {
+	if i < UNIT_KBYTE {
+		f = float64(i)
+		s = "Byte"
+	} else if i < UNIT_MBYTE {
+		f = float64(i) / float64(UNIT_KBYTE)
+		s = "KB"
+	} else if i < UNIT_GBYTE {
 		f = float64(i) / float64(UNIT_MBYTE)
 		s = "MB"
 	} else if i < UNIT_TBYTE {
@@ -58,7 +66,10 @@ func main() {
 			default:
 				water, err = os.Stdin.Read(baketsu)
 				if err != nil {
-					panic(err)
+					lake = lake + len(bufio.NewScanner(os.Stdin).Bytes())
+					ef, es := truncByte(lake)
+					fmt.Printf("ALL: %.2f %s\n", round(ef, 2), es)
+					os.Exit(0)
 				}
 				lake = lake + water
 				bytes.NewBuffer(baketsu).Reset()
