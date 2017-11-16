@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 	"time"
-	//	"strings"
 )
 
 const (
@@ -37,10 +37,14 @@ func round(f float64, places int) float64 {
 }
 
 func main() {
-	var lake int
-	var water int
-	var sea int
-	var err error
+	var (
+		lake  int
+		water int
+		sea   int
+		err   error
+		mark  string
+	)
+
 	stop := make(chan struct{}, 0)
 	restart := make(chan struct{}, 0)
 
@@ -66,7 +70,9 @@ func main() {
 		stop <- struct{}{}
 		f, s := truncByte(lake)
 		af, as := truncByte(sea)
-		fmt.Printf("\rSPD: %.2f %s/s ALL: %.2f %s", round(f, 2), s, round(af, 2), as)
+		fmt.Printf("\r%s", strings.Repeat(" ", len(mark)))
+		mark = fmt.Sprintf("SPD: %.2f %s/s ALL: %.2f %s", round(f, 2), s, round(af, 2), as)
+		fmt.Printf("\r%s", mark)
 		sea = sea + lake
 		lake = 0
 		restart <- struct{}{}
