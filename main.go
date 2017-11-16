@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"math"
@@ -17,43 +16,64 @@ const (
 	UNIT_TBYTE = 1099511627776
 )
 
-const BUF_SIZE = UNIT_MBYTE * 500 // 500Mbytes
+const BUF_SIZE = UNIT_MBYTE * 10 // 10Mbytes
 
-func truncByte(i int) (f float64, s string) {
+type Beaker struct {
+        Measure float64
+        Unit    string
+}
+
+func (b *Beaker)truncByte(i int) *Beaker{
 	if i < UNIT_KBYTE {
-		f = float64(i)
-		s = "Byte"
+		b.Measure = float64(i)
+		b.Unit = "Byte"
 	} else if i < UNIT_MBYTE {
-		f = float64(i) / float64(UNIT_KBYTE)
-		s = "KB"
+		b.Measure = float64(i) / float64(UNIT_KBYTE)
+		b.Unit  = "KB"
 	} else if i < UNIT_GBYTE {
-		f = float64(i) / float64(UNIT_MBYTE)
-		s = "MB"
+		b.Measure = float64(i) / float64(UNIT_MBYTE)
+		b.Unit = "MB"
 	} else if i < UNIT_TBYTE {
-		f = float64(i) / float64(UNIT_GBYTE)
-		s = "GB"
+		b.Measure = float64(i) / float64(UNIT_GBYTE)
+		b.Unit = "GB"
 	} else if i >= UNIT_TBYTE {
-		f = float64(i) / float64(UNIT_TBYTE)
-		s = "TB"
+		b.Measure = float64(i) / float64(UNIT_TBYTE)
+		b.Unit = "TB"
 	}
-	return
+	return b
+}
+
+type Water struct {
+	Size int
+	Free error
+}
+
+func (w *Water) Scoop(baketsu []byte) *Water {
+	w.Size, w.Free = os.Stdin.Read(baketsu)
+	return w
+}
+
+type Vessel struct {
+	Lake int
+	Sea  int
+}
+
+func (v *Vessel) Transfer() *Vessel{
+	v.Sea = v.Sea + v.Lake
+	v.Lake = 0
+	return v
 }
 
 func round(f float64, places int) float64 {
-	shift := math.Pow(10, float64(places))
-	return math.Floor(f*shift+.5) / shift
+        shift := math.Pow(10, float64(places))
+        return math.Floor(f*shift+.5) / shift
 }
 
 func main() {
-	var (
-		lake  int
-		water int
-		sea   int
-		err   error
-		mark  string
-	)
+	v := new(Vessel)
 
 	stop := make(chan struct{}, 0)
+	received := make(chan struct{}, 0)
 	restart := make(chan struct{}, 0)
 
 	baketsu := make([]byte, BUF_SIZE)
@@ -62,31 +82,29 @@ func main() {
 		for {
 			select {
 			case <-stop:
+				received <- struct{}{}
 				<-restart
 			default:
-				water, err = os.Stdin.Read(baketsu)
-				if err != nil {
-					// non-nil error when os.Stdin's length < BUF_SIZE
-					lake = lake + len(bufio.NewScanner(os.Stdin).Bytes())
-					ef, es := truncByte(lake)
-					fmt.Printf("ALL: %.2f %s\n", round(ef, 2), es)
-					os.Exit(0)
-				}
-				lake = lake + water
+				water := new(Water)
+				water.Scoop(baketsu)
+				v.Lake = v.Lake + water.Size
 				bytes.NewBuffer(baketsu).Reset()
 			}
 		}
 	}()
+
+	var mark string
 	for {
 		time.Sleep(1000 * time.Millisecond)
 		stop <- struct{}{}
-		f, s := truncByte(lake)
-		af, as := truncByte(sea)
+		<-received
+		lb, sb := new(Beaker), new(Beaker)
+		lb.truncByte(v.Lake)
+		sb.truncByte(v.Sea)
 		fmt.Printf("\r%s", strings.Repeat(" ", len(mark)))
-		mark = fmt.Sprintf("SPD: %.2f %s/s ALL: %.2f %s", round(f, 2), s, round(af, 2), as)
+		mark = fmt.Sprintf("SPD: %.2f %s/s ALL: %.2f %s", round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit)
 		fmt.Printf("\r%s", mark)
-		sea = sea + lake
-		lake = 0
+		v.Transfer()
 		restart <- struct{}{}
 	}
 }
