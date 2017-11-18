@@ -17,7 +17,7 @@ const (
 	UNIT_TBYTE = 1099511627776
 )
 
-const BUF_SIZE = UNIT_MBYTE * 100 // 100Mbytes
+const BAKETSU = UNIT_MBYTE * 100 // 100Mbytes
 
 const TIME_FORMAT = "15:04:05"
 
@@ -52,7 +52,7 @@ type Water struct {
 }
 
 func (w *Water) Scoop() *Water {
-	w.Size, _ = io.CopyN(ioutil.Discard, os.Stdin, BUF_SIZE)
+	w.Size, _ = io.CopyN(ioutil.Discard, os.Stdin, BAKETSU)
 	return w
 }
 
