@@ -17,7 +17,7 @@ const (
 	UNIT_TBYTE = 1099511627776
 )
 
-const BUF_SIZE = UNIT_MBYTE * 100 // 10Mbytes
+const BUF_SIZE = UNIT_MBYTE * 100 // 100Mbytes
 
 const TIME_FORMAT = "15:04:05"
 
