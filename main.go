@@ -76,38 +76,25 @@ func main() {
 	v := new(Vessel)
 	mark := ""
 
-	stop := make(chan struct{}, 0)
-	received := make(chan struct{}, 0)
-	restart := make(chan struct{}, 0)
-
-	go func() {
-		for {
-			select {
-			case <-stop:
-				received <- struct{}{}
-				<-restart
-			default:
-				water := new(Water)
-				water.Scoop()
-				v.Lake = v.Lake + water.Size
-			}
-		}
-	}()
-
 	t := new(time.Time)
 	start := time.Now()
+	tick := time.NewTicker(time.Millisecond * 1000)
+
 	for {
-		time.Sleep(1000 * time.Millisecond)
-		stop <- struct{}{}
-		<-received
-		lb, sb := new(Beaker), new(Beaker)
-		lb.truncByte(v.Lake)
-		sb.truncByte(v.Sea)
-		fmt.Printf("\r%s", strings.Repeat(" ", len(mark)))
-		end := time.Now()
-		mark = fmt.Sprintf("%s SPD: %.2f %s/s ALL: %.2f %s", fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit)
-		fmt.Printf("\r%s", mark)
-		v.Transfer()
-		restart <- struct{}{}
+		select {
+		default:
+			water := new(Water)
+			water.Scoop()
+			v.Lake = v.Lake + water.Size
+		case <-tick.C:
+			lb, sb := new(Beaker), new(Beaker)
+			lb.truncByte(v.Lake)
+			sb.truncByte(v.Sea)
+			fmt.Printf("\r%s", strings.Repeat(" ", len(mark)))
+			end := time.Now()
+			mark = fmt.Sprintf("%s SPD: %.2f %s/s ALL: %.2f %s", fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit)
+			fmt.Printf("\r%s", mark)
+			v.Transfer()
+		}
 	}
 }
