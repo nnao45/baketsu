@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+	"io/ioutil"
 	"bytes"
 	"fmt"
 	"math"
@@ -23,7 +25,7 @@ type Beaker struct {
         Unit    string
 }
 
-func (b *Beaker)truncByte(i int) *Beaker{
+func (b *Beaker)truncByte(i int64) *Beaker{
 	if i < UNIT_KBYTE {
 		b.Measure = float64(i)
 		b.Unit = "Byte"
@@ -44,18 +46,19 @@ func (b *Beaker)truncByte(i int) *Beaker{
 }
 
 type Water struct {
-	Size int
+	Size int64
 	Free error
 }
 
-func (w *Water) Scoop(baketsu []byte) *Water {
-	w.Size, w.Free = os.Stdin.Read(baketsu)
+func (w *Water) Scoop(/*baketsu []byte*/) *Water {
+	//w.Size, w.Free = os.Stdin.Read(baketsu)
+	w.Size,_ = io.CopyN(ioutil.Discard, os.Stdin, BUF_SIZE)
 	return w
 }
 
 type Vessel struct {
-	Lake int
-	Sea  int
+	Lake int64
+	Sea  int64
 }
 
 func (v *Vessel) Transfer() *Vessel{
@@ -87,7 +90,7 @@ func main() {
 				<-restart
 			default:
 				water := new(Water)
-				water.Scoop(baketsu)
+				water.Scoop(/*baketsu*/)
 				v.Lake = v.Lake + water.Size
 				bytes.NewBuffer(baketsu).Reset()
 			}
