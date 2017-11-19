@@ -32,8 +32,9 @@ var (
 	gib		= kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
 	tib		= kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 
-	packet		= kingpin.Flag("packet", "Receive Packet Capture Mode").Bool()
+	packet		= kingpin.Flag("packet", "Packet Capture Mode").Bool()
 	device		= kingpin.Flag("device", "Packet Capturing device").String()
+	promis		= kingpin.Flag("promis", "Promiscuous Capturing Packet").Default("false").Bool()
 )
 
 const (
@@ -178,7 +179,7 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 }
 
 func pcapture(capCh chan io.Reader, baketsu int64) {
-	handle, err := pcap.OpenLive(*device, int32(baketsu), true,  pcap.BlockForever)
+	handle, err := pcap.OpenLive(*device, int32(baketsu), *promis,  pcap.BlockForever)
 	if err != nil {
 		panic(err)
 	}
