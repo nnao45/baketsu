@@ -317,7 +317,7 @@ func main() {
 			mark = fmt.Sprintf("%sTime: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot,
 				spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot, p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot)
 			if *upper || *lower {
-				mark = mark + fmt.Sprintf("OVER: %d times", counter)
+				mark = mark + fmt.Sprintf("OVER: %d times ", counter)
 			}
 			if *memview {
 				runtime.ReadMemStats(&m)
