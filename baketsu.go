@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	pipe	= kingpin.Flag("pipe", "Output pipr to os.Stdout").Default("false").Short('p').Bool()
 	size    = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
 	memview = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
 	white   = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
@@ -157,7 +158,11 @@ type Water struct {
 }
 
 func (w *Water) Scoop(baketsu int64) *Water {
-	w.Size, _ = io.CopyN(ioutil.Discard, os.Stdin, baketsu)
+	out := ioutil.Discard
+	if *pipe {
+	out = os.Stdout
+	}
+	w.Size, _ = io.CopyN(out, os.Stdin, baketsu)
 	return w
 }
 
