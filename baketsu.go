@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"bufio"
 	"fmt"
 	"github.com/mattn/go-colorable"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/pcap"
 	"io"
 	"io/ioutil"
 	"math"
@@ -28,6 +31,10 @@ var (
 	mib		= kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
 	gib		= kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
 	tib		= kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
+
+	packet		= kingpin.Flag("packet", "Receive Packet Capture Mode").Bool()
+	device		= kingpin.Flag("device", "Packet Capturing device").String()
+	psize		= kingpin.Flag("psize", "Packet Capturing pcapsize").Default("1024").Int32()
 )
 
 const (
@@ -162,13 +169,38 @@ type Water struct {
 	Size int64
 }
 
-func (w *Water) Scoop(baketsu int64) *Water {
-	out := ioutil.Discard
+func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
+	//out = ioutil.Discard
+	//var in io.Reader
+	//in  = os.Stdin
+
 	if *pipe {
 	out = os.Stdout
 	}
-	w.Size, _ = io.CopyN(out, os.Stdin, baketsu)
+
+	w.Size, _ = io.CopyN(out, in, baketsu)
 	return w
+}
+
+func pcapture(capCh chan io.Reader) {
+	var err error
+	var handle *pcap.Handle
+
+	handle, err = pcap.OpenLive(*device, *psize, false, (*interval))
+	if err != nil {
+		panic(err)
+	}
+	defer handle.Close()
+
+	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+
+	for {
+		select{
+			case p := <-packetSource.Packets():
+				capCh <- bytes.NewReader(p.Data())
+			default:
+		}
+	}
 }
 
 type Vessel struct {
@@ -203,6 +235,14 @@ func addog(text string, filename string) error{
 func init() {
 	kingpin.Version(fmt.Sprint("baketsu's version: ", VERSION))
 	kingpin.Parse()
+
+	if *packet {
+		if *device == "" {
+		fmt.Println("Sorry, when packet capture mode, must select device.")
+		fmt.Println("exit 1")
+		os.Exit(1)
+		}
+	}
 
 	if *upper && *lower {
 		fmt.Println("Sorry, baketshu's threshold option is only one use upper-threshold or lower-threshold.")
@@ -254,11 +294,22 @@ func main() {
 	var counter int
 	thropt := NewthrOpt()
 
+	capCh := make(chan io.Reader)
+	if *packet {
+		go pcapture(capCh)
+	}
+
 	for {
 		select {
 		default:
+			if !*packet {
+				water := new(Water)
+				water.Scoop(ioutil.Discard, os.Stdin, baketsu)
+				v.Lake = v.Lake + water.Size
+			}
+		case b := <-capCh:
 			water := new(Water)
-			water.Scoop(baketsu)
+			water.Scoop(ioutil.Discard, b, baketsu)
 			v.Lake = v.Lake + water.Size
 		case <-tick.C:
 			lb, sb := new(Beaker), new(Beaker)
