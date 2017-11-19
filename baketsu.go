@@ -2,28 +2,28 @@ package main
 
 import (
 	"fmt"
+	"github.com/mattn/go-colorable"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"io/ioutil"
 	"math"
 	"os"
+	"runtime"
 	"strings"
 	"time"
-	"runtime"
-	"github.com/mattn/go-colorable"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	size =		kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
-	memview =	kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
-	white =		kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
-	upper =		kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
-	lower =		kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
-	byt =		kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
-	kib =		kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
-	mib =		kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
-	gib =		kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
-	tib =		kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
+	size    = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
+	memview = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
+	white   = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
+	upper   = kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
+	lower   = kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
+	byt     = kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
+	kib     = kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
+	mib     = kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
+	gib     = kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
+	tib     = kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 )
 
 const (
@@ -34,32 +34,32 @@ const (
 )
 
 type ThrOpt struct {
-        Byte    int64
-        KiB     int64
-        MiB     int64
-        GiB     int64
-        TiB     int64
+	Byte int64
+	KiB  int64
+	MiB  int64
+	GiB  int64
+	TiB  int64
 }
 
-func NewthrOpt() *ThrOpt{
-        return &ThrOpt{
-        Byte:   *byt,
-        KiB:     *kib * UNIT_KiBYTE,
-        MiB:     *mib * UNIT_MiBYTE,
-        GiB:     *gib * UNIT_GiBYTE,
-        TiB:     *tib * UNIT_TiBYTE,
-        }
+func NewthrOpt() *ThrOpt {
+	return &ThrOpt{
+		Byte: *byt,
+		KiB:  *kib * UNIT_KiBYTE,
+		MiB:  *mib * UNIT_MiBYTE,
+		GiB:  *gib * UNIT_GiBYTE,
+		TiB:  *tib * UNIT_TiBYTE,
+	}
 }
 
-func (t *ThrOpt) IsUse() int64{
-        var i int64
-        if t.Byte != 0 {
-                i = t.Byte
-        } else if t.KiB != 0 {
-                i = t.KiB
-        } else if t.MiB != 0 {
-                i = t.MiB
-        } else if t.GiB != 0 {
+func (t *ThrOpt) IsUse() int64 {
+	var i int64
+	if t.Byte != 0 {
+		i = t.Byte
+	} else if t.KiB != 0 {
+		i = t.KiB
+	} else if t.MiB != 0 {
+		i = t.MiB
+	} else if t.GiB != 0 {
 		i = t.GiB
 	} else if t.TiB != 0 {
 		i = t.TiB
@@ -67,53 +67,53 @@ func (t *ThrOpt) IsUse() int64{
 	return i
 }
 
-const	TIME_FORMAT = "15:04:05"
+const TIME_FORMAT = "15:04:05"
 
 const (
-	COLOR_BLACK_HEADER = "\x1b[30m"
-	COLOR_RED_HEADER = "\x1b[31m"
-	COLOR_GREEN_HEADER = "\x1b[32m"
-	COLOR_YELLOW_HEADER = "\x1b[33m"
-	COLOR_BLUE_HEADER = "\x1b[34m"
+	COLOR_BLACK_HEADER   = "\x1b[30m"
+	COLOR_RED_HEADER     = "\x1b[31m"
+	COLOR_GREEN_HEADER   = "\x1b[32m"
+	COLOR_YELLOW_HEADER  = "\x1b[33m"
+	COLOR_BLUE_HEADER    = "\x1b[34m"
 	COLOR_MAGENDA_HEADER = "\x1b[35m"
-	COLOR_CYAN_HEADER = "\x1b[36m"
-	COLOR_WHITE_HEADER = "\x1b[37m"
-	COLOR_FOOTER = "\x1b[0m"
+	COLOR_CYAN_HEADER    = "\x1b[36m"
+	COLOR_WHITE_HEADER   = "\x1b[37m"
+	COLOR_FOOTER         = "\x1b[0m"
 )
 
 type Pallet struct {
-	Black	string
-	Red	string
-	Green	string
-	Yellow	string
-	Blue	string
-	Magenda	string
-	Cyan	string
-	White	string
+	Black   string
+	Red     string
+	Green   string
+	Yellow  string
+	Blue    string
+	Magenda string
+	Cyan    string
+	White   string
 }
 
 func NewPallet() *Pallet {
 	return &Pallet{
-		Black:		COLOR_BLACK_HEADER,
-                Red:		COLOR_RED_HEADER,
-                Green:		COLOR_GREEN_HEADER,
-                Yellow:		COLOR_YELLOW_HEADER,
-                Blue:		COLOR_BLUE_HEADER,
-                Magenda:	COLOR_MAGENDA_HEADER,
-                Cyan:		COLOR_CYAN_HEADER,
-                White:		COLOR_WHITE_HEADER,
+		Black:   COLOR_BLACK_HEADER,
+		Red:     COLOR_RED_HEADER,
+		Green:   COLOR_GREEN_HEADER,
+		Yellow:  COLOR_YELLOW_HEADER,
+		Blue:    COLOR_BLUE_HEADER,
+		Magenda: COLOR_MAGENDA_HEADER,
+		Cyan:    COLOR_CYAN_HEADER,
+		White:   COLOR_WHITE_HEADER,
 	}
 
 }
 
-func (p *Pallet) Foot() (footer string){
+func (p *Pallet) Foot() (footer string) {
 	return COLOR_FOOTER
 }
 
 type Beaker struct {
-	Measure		float64
-	Unit		string
-	Threshold	bool
+	Measure   float64
+	Unit      string
+	Threshold bool
 }
 
 func (b *Beaker) truncByte(i int64, t *ThrOpt, IsLake bool) *Beaker {
@@ -187,12 +187,12 @@ func init() {
 	for _, c := range check {
 		if !*upper && !*lower {
 			if c != 0 {
-			k++
+				k++
 			}
 		}
 		if *upper || *lower {
 			if c != 0 {
-			i++
+				i++
 			}
 		}
 	}
@@ -245,7 +245,7 @@ func main() {
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
 			mark = fmt.Sprintf("%sTime: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot(),
-						 spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot(), p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot())
+				spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot(), p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot())
 			if *upper || *lower {
 				mark = mark + fmt.Sprintf("OVER: %d times", counter)
 			}
