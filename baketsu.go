@@ -266,7 +266,7 @@ func init() {
 	}
 	if *upper || *lower {
 		if i != 1 {
-			fmt.Println("Sorry, baketshu's threshold option is only one use unit.")
+			fmt.Println("Sorry, baketsu's threshold option is only one use unit.")
 			fmt.Println("exit 1")
 			os.Exit(1)
 		}
