@@ -34,7 +34,6 @@ var (
 
 	packet		= kingpin.Flag("packet", "Receive Packet Capture Mode").Bool()
 	device		= kingpin.Flag("device", "Packet Capturing device").String()
-	psize		= kingpin.Flag("psize", "Packet Capturing pcapsize").Default("1024").Int32()
 )
 
 const (
@@ -178,8 +177,8 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 	return w
 }
 
-func pcapture(capCh chan io.Reader) {
-	handle, err := pcap.OpenLive(*device, *psize, false, (*interval))
+func pcapture(capCh chan io.Reader, baketsu int64) {
+	handle, err := pcap.OpenLive(*device, int32(baketsu), true,  pcap.BlockForever)
 	if err != nil {
 		panic(err)
 	}
@@ -289,7 +288,7 @@ func main() {
 
 	capCh := make(chan io.Reader)
 	if *packet {
-		go pcapture(capCh)
+		go pcapture(capCh, baketsu)
 	}
 
 	for {
