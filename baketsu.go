@@ -1,40 +1,44 @@
 package main
 
 import (
-	"bytes"
 	"bufio"
+	"bytes"
 	"fmt"
-	"github.com/mattn/go-colorable"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
+	"github.com/mattn/go-colorable"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"io/ioutil"
 	"math"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var (
-	interval	= kingpin.Flag("interval", "Logging interval").Default("1000ms").Short('i').Duration()
-	pipe		= kingpin.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
-	size		= kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
-	memview		= kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
-	white		= kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
-	log		= kingpin.Flag("log", "baketsu's result output log file").String()
-	upper		= kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
-	lower		= kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
-	byt		= kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
-	kib		= kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
-	mib		= kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
-	gib		= kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
-	tib		= kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
+	interval = kingpin.Flag("interval", "Logging interval").Default("1000ms").Short('i').Duration()
+	pipe     = kingpin.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
+	size     = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
+	memview  = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
+	white    = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
+	log      = kingpin.Flag("log", "baketsu's result output log file").String()
+	upper    = kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
+	lower    = kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
+	byt      = kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
+	kib      = kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
+	mib      = kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
+	gib      = kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
+	tib      = kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 
-	packet		= kingpin.Flag("packet", "Packet Capture Mode").Bool()
-	device		= kingpin.Flag("device", "Packet Capturing device").String()
-	promis		= kingpin.Flag("promis", "Promiscuous Capturing Packet").Default("false").Bool()
+	packet   = kingpin.Flag("packet", "Packet capture mode").Bool()
+	device   = kingpin.Flag("device", "Packet capturing device").String()
+	promis   = kingpin.Flag("promis", "Promiscuous capturing packet").Default("false").Bool()
+	filter   = kingpin.Flag("filter", "Set packet capturing filter").Bool()
+	port     = kingpin.Flag("port", "Packet capturing fliter port").Uint64()
+	protocol = kingpin.Flag("protocol", "Packet capturing fliter protocol").Default("tcp").String()
 )
 
 const (
@@ -84,7 +88,7 @@ func (t *ThrOpt) IsUse() int64 {
 
 const (
 	TIME_FORMAT = "15:04:05"
-	LOG_FORMAT = "2006-01-02 15:04:05.000"
+	LOG_FORMAT  = "2006-01-02 15:04:05.000"
 )
 
 const (
@@ -171,7 +175,7 @@ type Water struct {
 
 func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 	if *pipe {
-	out = os.Stdout
+		out = os.Stdout
 	}
 
 	w.Size, _ = io.CopyN(out, in, baketsu)
@@ -179,19 +183,30 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 }
 
 func pcapture(capCh chan io.Reader, baketsu int64) {
-	handle, err := pcap.OpenLive(*device, int32(baketsu), *promis,  pcap.BlockForever)
+	handle, err := pcap.OpenLive(*device, int32(baketsu), *promis, pcap.BlockForever)
 	if err != nil {
 		panic(err)
 	}
 	defer handle.Close()
 
+	if *filter {
+		filstr := *protocol
+		if *port != 0 {
+			filstr = filstr + " and port " + strconv.FormatUint(*port, 10)
+		}
+		err = handle.SetBPFFilter(filstr)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 
 	for {
-		select{
-			case p := <-packetSource.Packets():
-				capCh <- bytes.NewReader(p.Data())
-			default:
+		select {
+		case p := <-packetSource.Packets():
+			capCh <- bytes.NewReader(p.Data())
+		default:
 		}
 	}
 }
@@ -212,7 +227,7 @@ func round(f float64, places int) float64 {
 	return math.Floor(f*shift+.5) / shift
 }
 
-func addog(text string, filename string) error{
+func addog(text string, filename string) error {
 	var writer *bufio.Writer
 	textData := []byte(text)
 
@@ -231,9 +246,22 @@ func init() {
 
 	if *packet {
 		if *device == "" {
-		fmt.Fprintln(os.Stderr, "Sorry, when packet capture mode, must select device.")
-		fmt.Fprintln(os.Stderr, "exit 1")
-		os.Exit(1)
+			fmt.Fprintln(os.Stderr, "Sorry, when packet capture mode, must select device.")
+			fmt.Fprintln(os.Stderr, "exit 1")
+			os.Exit(1)
+		}
+	}
+
+	if *filter {
+		if !strings.Contains(*protocol, "tcp") && !strings.Contains(*protocol, "udp") && !strings.Contains(*protocol, "icmp") {
+			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, only support tcp or udp or icmp.")
+			fmt.Fprintln(os.Stderr, "exit 1")
+			os.Exit(1)
+		}
+		if *port > 65535 {
+			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, port number 1~65535.")
+			fmt.Fprintln(os.Stderr, "exit 1")
+			os.Exit(1)
 		}
 	}
 
