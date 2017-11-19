@@ -179,10 +179,7 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 }
 
 func pcapture(capCh chan io.Reader) {
-	var err error
-	var handle *pcap.Handle
-
-	handle, err = pcap.OpenLive(*device, *psize, false, (*interval))
+	handle, err := pcap.OpenLive(*device, *psize, false, (*interval))
 	if err != nil {
 		panic(err)
 	}
