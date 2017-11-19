@@ -48,7 +48,6 @@ func (b *Beaker) truncByte(i int64) *Beaker {
 
 type Water struct {
 	Size int64
-	Free error
 }
 
 func (w *Water) Scoop() *Water {
@@ -90,10 +89,10 @@ func main() {
 			lb, sb := new(Beaker), new(Beaker)
 			lb.truncByte(v.Lake)
 			sb.truncByte(v.Sea)
-			fmt.Printf("\r%s", strings.Repeat(" ", len(mark)))
+			fmt.Fprintf(os.Stderr, "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
 			mark = fmt.Sprintf("%s SPD: %.2f %s/s ALL: %.2f %s", fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit)
-			fmt.Printf("\r%s", mark)
+			fmt.Fprintf(os.Stderr,"\r%s", mark)
 			v.Transfer()
 		}
 	}
