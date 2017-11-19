@@ -19,11 +19,11 @@ var (
 	white =		kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
 	upper =		kingpin.Flag("upper", "Info & Count up to threshold(byte)").Short('u').Bool()
 	lower =		kingpin.Flag("lower", "Info & Count below threshold(byte)").Short('l').Bool()
-	byt =		kingpin.Flag("byt", "Unit byte of threshold(byte)").Short('b').Int64()
-	kib =		kingpin.Flag("kib", "Unit kib of threshold(byte)").Short('k').Int64()
-	mib =		kingpin.Flag("mib", "Unit mib of threshold(byte)").Short('m').Int64()
-	gib =		kingpin.Flag("gib", "Unit gib of threshold(byte)").Short('g').Int64()
-	tib =		kingpin.Flag("tib", "Unit tib of threshold(byte)").Short('t').Int64()
+	byt =		kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
+	kib =		kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
+	mib =		kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
+	gib =		kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
+	tib =		kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 )
 
 const (
