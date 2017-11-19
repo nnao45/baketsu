@@ -90,6 +90,7 @@ type Pallet struct {
 	Magenda string
 	Cyan    string
 	White   string
+	Foot	string
 }
 
 func NewPallet() *Pallet {
@@ -102,12 +103,9 @@ func NewPallet() *Pallet {
 		Magenda: COLOR_MAGENDA_HEADER,
 		Cyan:    COLOR_CYAN_HEADER,
 		White:   COLOR_WHITE_HEADER,
+		Foot:	 COLOR_FOOTER,
 	}
 
-}
-
-func (p *Pallet) Foot() (footer string) {
-	return COLOR_FOOTER
 }
 
 type Beaker struct {
@@ -244,8 +242,8 @@ func main() {
 			sb.truncByte(v.Sea, thropt, false)
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
-			mark = fmt.Sprintf("%sTime: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot(),
-				spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot(), p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot())
+			mark = fmt.Sprintf("%sTime: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot,
+				spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot, p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot)
 			if *upper || *lower {
 				mark = mark + fmt.Sprintf("OVER: %d times", counter)
 			}
