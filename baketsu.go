@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/mattn/go-colorable"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -17,6 +18,7 @@ var (
 	size    = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
 	memview = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
 	white   = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
+	log     = kingpin.Flag("log", "baketsu's result output log file").String()
 	upper   = kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
 	lower   = kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
 	byt     = kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
@@ -67,7 +69,10 @@ func (t *ThrOpt) IsUse() int64 {
 	return i
 }
 
-const TIME_FORMAT = "15:04:05"
+const (
+	TIME_FORMAT = "15:04:05"
+	LOG_FORMAT = "2006-01-02 15:04:05.000"
+)
 
 const (
 	COLOR_BLACK_HEADER   = "\x1b[30m"
@@ -90,7 +95,7 @@ type Pallet struct {
 	Magenda string
 	Cyan    string
 	White   string
-	Foot	string
+	Foot    string
 }
 
 func NewPallet() *Pallet {
@@ -103,7 +108,7 @@ func NewPallet() *Pallet {
 		Magenda: COLOR_MAGENDA_HEADER,
 		Cyan:    COLOR_CYAN_HEADER,
 		White:   COLOR_WHITE_HEADER,
-		Foot:	 COLOR_FOOTER,
+		Foot:    COLOR_FOOTER,
 	}
 
 }
@@ -172,8 +177,22 @@ func round(f float64, places int) float64 {
 	return math.Floor(f*shift+.5) / shift
 }
 
+func addog(text string, filename string) error{
+	var writer *bufio.Writer
+	textData := []byte(text)
+
+	writeFile, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0755)
+	writer = bufio.NewWriter(writeFile)
+	writer.Write(textData)
+	writer.Flush()
+	defer writeFile.Close()
+
+	return err
+}
+
 func init() {
 	kingpin.Parse()
+
 	if *upper && *lower {
 		fmt.Println("Sorry, baketshu's threshold option is only one use upper-threshold or lower-threshold.")
 		fmt.Println("exit 1")
@@ -222,7 +241,6 @@ func main() {
 		p = new(Pallet)
 	}
 	var counter int
-
 	thropt := NewthrOpt()
 
 	for {
@@ -250,6 +268,12 @@ func main() {
 			if *memview {
 				runtime.ReadMemStats(&m)
 				mark = mark + fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
+			}
+			if *log != "" {
+				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", mark), *log)
+				if err != nil {
+					panic(err)
+				}
 			}
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", mark)
 			v.Transfer()
