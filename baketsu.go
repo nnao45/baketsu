@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	pipe	= kingpin.Flag("pipe", "Output pipr to os.Stdout").Default("false").Short('p').Bool()
+	pipe	= kingpin.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
 	size    = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
 	memview = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
 	white   = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
