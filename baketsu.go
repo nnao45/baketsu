@@ -337,6 +337,7 @@ func main() {
 	start := time.Now()
 	tick := time.NewTicker(*interval)
 	var m runtime.MemStats
+	mode := "[S]"
 
 	p := NewPallet()
 	if *white {
@@ -347,6 +348,7 @@ func main() {
 
 	capCh := make(chan io.Reader)
 	if *packet {
+		mode = "[P]"
 		go pcapture(capCh, baketsu)
 	}
 
@@ -373,7 +375,7 @@ func main() {
 			sb.truncByte(v.Sea, thropt, false)
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
-			mark = fmt.Sprintf("%sTime: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot,
+			mark = fmt.Sprintf("%s%s Time: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot,
 				spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot, p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot)
 			if *upper || *lower {
 				mark = mark + fmt.Sprintf("OVER: %d times ", counter)
