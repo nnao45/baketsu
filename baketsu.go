@@ -170,10 +170,6 @@ type Water struct {
 }
 
 func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
-	//out = ioutil.Discard
-	//var in io.Reader
-	//in  = os.Stdin
-
 	if *pipe {
 	out = os.Stdout
 	}
