@@ -15,18 +15,19 @@ import (
 )
 
 var (
-	pipe	= kingpin.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
-	size    = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
-	memview = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
-	white   = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
-	log     = kingpin.Flag("log", "baketsu's result output log file").String()
-	upper   = kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
-	lower   = kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
-	byt     = kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
-	kib     = kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
-	mib     = kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
-	gib     = kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
-	tib     = kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
+	interval	= kingpin.Flag("interval", "Logging interval").Default("1000ms").Short('i').Duration()
+	pipe		= kingpin.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
+	size		= kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
+	memview		= kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
+	white		= kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
+	log		= kingpin.Flag("log", "baketsu's result output log file").String()
+	upper		= kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
+	lower		= kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
+	byt		= kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
+	kib		= kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
+	mib		= kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
+	gib		= kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
+	tib		= kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 )
 
 const (
@@ -196,6 +197,7 @@ func addog(text string, filename string) error{
 }
 
 func init() {
+	kingpin.Version("1.0.0")
 	kingpin.Parse()
 
 	if *upper && *lower {
@@ -238,7 +240,7 @@ func main() {
 	mark := ""
 	t := new(time.Time)
 	start := time.Now()
-	tick := time.NewTicker(time.Millisecond * 1000)
+	tick := time.NewTicker(*interval)
 	var m runtime.MemStats
 
 	p := NewPallet()
