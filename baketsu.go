@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"regexp"
 )
 
 var (
@@ -38,7 +39,9 @@ var (
 	promis   = kingpin.Flag("promis", "Promiscuous capturing packet").Default("false").Bool()
 	filter   = kingpin.Flag("filter", "Set packet capturing filter").Bool()
 	port     = kingpin.Flag("port", "Packet capturing fliter port").Uint64()
-	protocol = kingpin.Flag("protocol", "Packet capturing fliter protocol").Default("tcp").String()
+	protocol = kingpin.Flag("protocol", "Packet capturing fliter protocol").String()
+	dsthost  = kingpin.Flag("dsthost", "Packet capturing fliter dsthost").String()
+	srchost  = kingpin.Flag("srchost", "Packet capturing fliter dsthost").String()
 )
 
 const (
@@ -190,10 +193,20 @@ func pcapture(capCh chan io.Reader, baketsu int64) {
 	defer handle.Close()
 
 	if *filter {
-		filstr := *protocol
-		if *port != 0 {
-			filstr = filstr + " and port " + strconv.FormatUint(*port, 10)
+		var optAry []string
+		if *protocol != "" {
+			optAry = append(optAry, *protocol)
 		}
+		if *port != 0 {
+			optAry = append(optAry, fmt.Sprint("port ", strconv.FormatUint(*port, 10)))
+		}
+		if *srchost != "" {
+			optAry = append(optAry, fmt.Sprint("src host ", *srchost))
+		}
+		if *dsthost != "" {
+			optAry = append(optAry, fmt.Sprint("dst host ", *dsthost))
+		}
+		filstr := strings.Join(optAry, " and ")
 		err = handle.SetBPFFilter(filstr)
 		if err != nil {
 			panic(err)
@@ -240,6 +253,13 @@ func addog(text string, filename string) error {
 	return err
 }
 
+func IsIP(ip string) (b bool) {
+	if m, _ := regexp.MatchString("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$", ip); !m {
+		return false
+	}
+	return true
+}
+
 func init() {
 	kingpin.Version(fmt.Sprint("baketsu's version: ", VERSION))
 	kingpin.Parse()
@@ -253,7 +273,7 @@ func init() {
 	}
 
 	if *filter {
-		if !strings.Contains(*protocol, "tcp") && !strings.Contains(*protocol, "udp") && !strings.Contains(*protocol, "icmp") {
+		if *protocol != "" && !strings.Contains(*protocol, "tcp") && !strings.Contains(*protocol, "udp") && !strings.Contains(*protocol, "icmp") {
 			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, only support tcp or udp or icmp.")
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
@@ -263,6 +283,16 @@ func init() {
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
+		if *srchost != "" && !IsIP(*srchost) {
+			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, src host is IPv4 format.")
+                        fmt.Fprintln(os.Stderr, "exit 1")
+                        os.Exit(1)
+		}
+		if *dsthost != "" && !IsIP(*dsthost) {
+                        fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, dst host is IPv4 format.")
+                        fmt.Fprintln(os.Stderr, "exit 1")
+                        os.Exit(1)
+                }
 	}
 
 	if *upper && *lower {
