@@ -177,7 +177,7 @@ func round(f float64, places int) float64 {
 func init() {
 	kingpin.Parse()
 	if *upper && *lower {
-		fmt.Println("Sorry, baketshu's threshold option is only one use upper-threshold or lowwer-threshold.")
+		fmt.Println("Sorry, baketshu's threshold option is only one use upper-threshold or lower-threshold.")
 		fmt.Println("exit 1")
 		os.Exit(1)
 	}
