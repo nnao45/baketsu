@@ -31,6 +31,10 @@ var (
 )
 
 const (
+	VERSION = "1.0.0"
+)
+
+const (
 	UNIT_KiBYTE = 1024
 	UNIT_MiBYTE = 1048576
 	UNIT_GiBYTE = 1073741824
@@ -197,7 +201,7 @@ func addog(text string, filename string) error{
 }
 
 func init() {
-	kingpin.Version("1.0.0")
+	kingpin.Version(fmt.Sprint("baketsu's version: ", VERSION))
 	kingpin.Parse()
 
 	if *upper && *lower {
