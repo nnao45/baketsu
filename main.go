@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"strings"
-//	"strconv"
 	"time"
 	"runtime"
 	"github.com/mattn/go-colorable"
@@ -15,75 +14,60 @@ import (
 )
 
 var (
-        size = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
-	memview = kingpin.Flag("memview", "Memory viewer").Default("false").Short('m').Bool()
-	white = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
-	upper = kingpin.Flag("upper", "info & count up to threshold(byte)").Short('u').Int64()
-	lower = kingpin.Flag("lower", "info & count below threshold(byte)").Short('l').Int64()
+	size =		kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
+	memview =	kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
+	white =		kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
+	upper =		kingpin.Flag("upper", "Info & Count up to threshold(byte)").Short('u').Bool()
+	lower =		kingpin.Flag("lower", "Info & Count below threshold(byte)").Short('l').Bool()
+	byt =		kingpin.Flag("byt", "Unit byte of threshold(byte)").Short('b').Int64()
+	kib =		kingpin.Flag("kib", "Unit kib of threshold(byte)").Short('k').Int64()
+	mib =		kingpin.Flag("mib", "Unit mib of threshold(byte)").Short('m').Int64()
+	gib =		kingpin.Flag("gib", "Unit gib of threshold(byte)").Short('g').Int64()
+	tib =		kingpin.Flag("tib", "Unit tib of threshold(byte)").Short('t').Int64()
 )
-/*
-type NativeThresholdOpt struct {
-	NativeUpper	string
-	NativeLower	string
-}
 
-func NewNativeThresholdOpt () *NativeThresholdOpt {
-	return &NativeThresholdOpt{
-	NativeUpper:	*upper,
-	NativeLower:	*lower,
-	}
-}
-
-type ThresholdOpt struct {
-	Upper	int64
-	Lower	int64
-	Error	error
-}
-
-func (n *NativeThresholdOpt) Parse()*ThresholdOpt {
-	var s string
-	var i int64
-	var u int64
-	var t ThresholdOpt
-	if n.NativeUpper != "" {
-		s = n.NativeUpper
-	} else if n.NativeLower != "" {
-		s = n.NativeLower
-	}
-
-	if strings.Contains(s, " "){
-		sAry := strings.SplitN(s, " ", 1)
-		if strings.Contains(sAry[1], "KiB") {
-			u = UNIT_KiBYTE
-		} else if strings.Contains(sAry[1], "MiB") {
-			u = UNIT_MiBYTE
-		} else if strings.Contains(sAry[1], "GiB") {
-			u = UNIT_GiBYTE
-		} else if strings.Contains(sAry[1], "TiB") {
-			u = UNIT_TiBYTE
-		} else {
-			t.Error = fmt.Errorf("Threshold option is bad format.")
-		}
-	}
-
-	i, t.Error = strconv.ParseInt(s, 10, 64)
-
-	if n.NativeUpper != "" {
-		t.Upper = i * u
-        } else if n.NativeLower != "" {
-                t.Lower = i * u
-        }
-	return &t
-
-}
-*/
 const (
 	UNIT_KiBYTE = 1024
 	UNIT_MiBYTE = 1048576
 	UNIT_GiBYTE = 1073741824
 	UNIT_TiBYTE = 1099511627776
-	TIME_FORMAT = "15:04:05"
 )
+
+type ThrOpt struct {
+        Byte    int64
+        KiB     int64
+        MiB     int64
+        GiB     int64
+        TiB     int64
+}
+
+func NewthrOpt() *ThrOpt{
+        return &ThrOpt{
+        Byte:   *byt,
+        KiB:     *kib * UNIT_KiBYTE,
+        MiB:     *mib * UNIT_MiBYTE,
+        GiB:     *gib * UNIT_GiBYTE,
+        TiB:     *tib * UNIT_TiBYTE,
+        }
+}
+
+func (t *ThrOpt) IsUse() int64{
+        var i int64
+        if t.Byte != 0 {
+                i = t.Byte
+        } else if t.KiB != 0 {
+                i = t.KiB
+        } else if t.MiB != 0 {
+                i = t.MiB
+        } else if t.GiB != 0 {
+		i = t.GiB
+	} else if t.TiB != 0 {
+		i = t.TiB
+	}
+	return i
+}
+
+const	TIME_FORMAT = "15:04:05"
 
 const (
 	COLOR_BLACK_HEADER = "\x1b[30m"
@@ -132,7 +116,7 @@ type Beaker struct {
 	Threshold	bool
 }
 
-func (b *Beaker) truncByte(i int64, IsLake bool) *Beaker {
+func (b *Beaker) truncByte(i int64, t *ThrOpt, IsLake bool) *Beaker {
 	if i < UNIT_KiBYTE {
 		b.Measure = float64(i)
 		b.Unit = "Byte"
@@ -151,13 +135,13 @@ func (b *Beaker) truncByte(i int64, IsLake bool) *Beaker {
 	}
 
 	if IsLake {
-		if *upper != 0 {
-			if i > *upper {
+		if *upper {
+			if i > t.IsUse() {
 				b.Threshold = true
 			}
 		}
-		if *lower != 0 {
-			if i < *lower {
+		if *lower {
+			if i < t.IsUse() {
 				b.Threshold = true
 			}
 		}
@@ -192,8 +176,35 @@ func round(f float64, places int) float64 {
 
 func init() {
 	kingpin.Parse()
-	if *upper != 0 && *lower != 0 {
-		fmt.Println("Sorry, baketshu's option threshold is only one use upper-threshold or lowwer-threshold.")
+	if *upper && *lower {
+		fmt.Println("Sorry, baketshu's threshold option is only one use upper-threshold or lowwer-threshold.")
+		fmt.Println("exit 1")
+		os.Exit(1)
+	}
+	check := []int64{*byt, *kib, *mib, *gib, *tib}
+	var i int
+	var k int
+	for _, c := range check {
+		if !*upper && !*lower {
+			if c != 0 {
+			k++
+			}
+		}
+		if *upper || *lower {
+			if c != 0 {
+			i++
+			}
+		}
+	}
+	if *upper || *lower {
+		if i != 1 {
+			fmt.Println("Sorry, baketshu's threshold option is only one use unit.")
+			fmt.Println("exit 1")
+			os.Exit(1)
+		}
+	}
+	if k > 0 {
+		fmt.Println("Sorry, baketshu's threshold option must used lower or upper with unit option.")
 		fmt.Println("exit 1")
 		os.Exit(1)
 	}
@@ -204,7 +215,6 @@ func main() {
 	v := new(Vessel)
 	mark := ""
 	t := new(time.Time)
-	//th:= new(ThresholdOpt)
 	start := time.Now()
 	tick := time.NewTicker(time.Millisecond * 1000)
 	var m runtime.MemStats
@@ -213,18 +223,9 @@ func main() {
 	if *white {
 		p = new(Pallet)
 	}
-	/*
-	if *upper != "" || *lower !="" {
-		n := NewNativeThresholdOpt()
-		th := n.Parse()
-		if th.Error != nil {
-			fmt.Println("Sorry, Threshold option parse error occured: ", th.Error)
-			fmt.Println("exit 1")
-			os.Exit(1)
-		}
-	}
-*/
 	var counter int
+
+	thropt := NewthrOpt()
 
 	for {
 		select {
@@ -234,18 +235,18 @@ func main() {
 			v.Lake = v.Lake + water.Size
 		case <-tick.C:
 			lb, sb := new(Beaker), new(Beaker)
-			lb.truncByte(v.Lake, true)
+			lb.truncByte(v.Lake, thropt, true)
 			spdcolor := p.Cyan
 			if lb.Threshold {
 				spdcolor = p.Red
 				counter++
 			}
-			sb.truncByte(v.Sea, false)
+			sb.truncByte(v.Sea, thropt, false)
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
 			mark = fmt.Sprintf("%sTime: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot(),
 						 spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot(), p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot())
-			if *upper != 0 || *lower != 0 {
+			if *upper || *lower {
 				mark = mark + fmt.Sprintf("OVER: %d times", counter)
 			}
 			if *memview {
