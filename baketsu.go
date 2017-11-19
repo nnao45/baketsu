@@ -230,15 +230,15 @@ func init() {
 
 	if *packet {
 		if *device == "" {
-		fmt.Println("Sorry, when packet capture mode, must select device.")
-		fmt.Println("exit 1")
+		fmt.Fprintln(os.Stderr, "Sorry, when packet capture mode, must select device.")
+		fmt.Fprintln(os.Stderr, "exit 1")
 		os.Exit(1)
 		}
 	}
 
 	if *upper && *lower {
-		fmt.Println("Sorry, baketshu's threshold option is only one use upper-threshold or lower-threshold.")
-		fmt.Println("exit 1")
+		fmt.Fprintln(os.Stderr, "Sorry, baketshu's threshold option is only one use upper-threshold or lower-threshold.")
+		fmt.Fprintln(os.Stderr, "exit 1")
 		os.Exit(1)
 	}
 	check := []int64{*byt, *kib, *mib, *gib, *tib}
@@ -258,14 +258,14 @@ func init() {
 	}
 	if *upper || *lower {
 		if i != 1 {
-			fmt.Println("Sorry, baketsu's threshold option is only one use unit.")
-			fmt.Println("exit 1")
+			fmt.Fprintln(os.Stderr, "Sorry, baketsu's threshold option is only one use unit.")
+			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
 	}
 	if k > 0 {
-		fmt.Println("Sorry, baketshu's threshold option must used lower or upper with unit option.")
-		fmt.Println("exit 1")
+		fmt.Fprintln(os.Stderr, "Sorry, baketshu's threshold option must used lower or upper with unit option.")
+		fmt.Fprintln(os.Stderr, "exit 1")
 		os.Exit(1)
 	}
 }
