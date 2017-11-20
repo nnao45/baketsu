@@ -153,15 +153,6 @@ func NewDrawOut(p *Pallet) *DrawOut {
 	}
 }
 
-func (d *DrawOut) Whitify(p *Pallet) *DrawOut {
-	return &DrawOut{
-		Time:  "",
-		Speed: "",
-		All:   "",
-		Foot:  "",
-	}
-}
-
 type Beaker struct {
 	Measure   float64
 	Unit      string
@@ -264,31 +255,6 @@ func (v *Vessel) Transfer() *Vessel {
 	return v
 }
 
-func round(f float64, places int) float64 {
-	shift := math.Pow(10, float64(places))
-	return math.Floor(f*shift+.5) / shift
-}
-
-func addog(text string, filename string) error {
-	var writer *bufio.Writer
-	textData := []byte(text)
-
-	writeFile, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0755)
-	writer = bufio.NewWriter(writeFile)
-	writer.Write(textData)
-	writer.Flush()
-	defer writeFile.Close()
-
-	return err
-}
-
-func IsIP(ip string) (b bool) {
-	if m, _ := regexp.MatchString("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$", ip); !m {
-		return false
-	}
-	return true
-}
-
 type Result struct {
 	Var       []interface{}
 	Fixed     string
@@ -299,8 +265,9 @@ type Result struct {
 }
 
 func NewResult() *Result {
+	v := make([]interface{}, 10, 10)
 	return &Result{
-		Var:       nil,
+		Var:       v,
 		Fixed:     "",
 		Log:       "",
 		Thres:     "",
@@ -310,7 +277,8 @@ func NewResult() *Result {
 }
 
 func (r *Result) Fix(d *DrawOut) (l, s string) {
-	var ary []interface{}
+	ary := make([]interface{}, 0, 10)
+	//var ary []interface{}
 	if r.Colorable {
 		for i, v := range r.Var {
 			if i == 0 {
@@ -337,6 +305,14 @@ func (r *Result) Fix(d *DrawOut) (l, s string) {
 			r.Var[0], r.Var[1], r.Var[2], r.Var[3], r.Var[4], r.Var[5])
 	}
 	return
+}
+
+func (r *Result) SumF() string {
+	return r.Fixed + r.Thres + r.Memstat
+}
+
+func (r *Result) SumL() string {
+	return r.Log + r.Thres + r.Memstat
 }
 
 func init() {
@@ -414,7 +390,7 @@ func main() {
 	baketsu := (*size * UNIT_MiBYTE)
 	v := new(Vessel)
 	t := new(time.Time)
-	delete := 0
+	result := NewResult()
 	start := time.Now()
 	tick := time.NewTicker(*interval)
 	p := NewPallet()
@@ -442,7 +418,8 @@ func main() {
 			water.Scoop(ioutil.Discard, b, baketsu)
 			v.Lake = v.Lake + water.Size
 		case <-tick.C:
-			result := NewResult()
+			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(result.SumF())))
+			result = NewResult()
 			lb, sb := new(Beaker), new(Beaker)
 			lb.truncByte(v.Lake, thropt, true)
 			d := NewDrawOut(p)
@@ -454,7 +431,6 @@ func main() {
 				result.Colorable = false
 			}
 			sb.truncByte(v.Sea, thropt, false)
-			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", delete))
 			end := time.Now()
 			result.Var = []interface{}{mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
 				round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
@@ -467,14 +443,38 @@ func main() {
 				result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 			}
 			if *log != "" {
-				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.Log+result.Thres+result.Memstat), *log)
+				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.SumL()), *log)
 				if err != nil {
 					panic(err)
 				}
 			}
-			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (result.Fixed + result.Thres + result.Memstat))
-			delete = len(result.Fixed)
+			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (result.SumF()))
 			v.Transfer()
 		}
 	}
+}
+
+func round(f float64, places int) float64 {
+	shift := math.Pow(10, float64(places))
+	return math.Floor(f*shift+.5) / shift
+}
+
+func addog(text string, filename string) error {
+	var writer *bufio.Writer
+	textData := []byte(text)
+
+	writeFile, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0755)
+	writer = bufio.NewWriter(writeFile)
+	writer.Write(textData)
+	writer.Flush()
+	defer writeFile.Close()
+
+	return err
+}
+
+func IsIP(ip string) (b bool) {
+	if m, _ := regexp.MatchString("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$", ip); !m {
+		return false
+	}
+	return true
 }
