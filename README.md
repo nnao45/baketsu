@@ -1,5 +1,6 @@
-# baketsu
-this is received byte stream, and do anything(toooooooooooooooooo :bullettrain_side: speedy:exclamation:).
+# baketsu :inbox_tray:
+this is received byte stream, and do anything(toooooooooooooooooo :bullettrain_side: speedy:exclamation:).  
+baketsu means, bucket in japanese.
 # What to do ?
 ## default
 - [x] receive stdin.
