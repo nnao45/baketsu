@@ -39,7 +39,7 @@ var (
 
 	packet   = app.Command("packet", "Packet capture mode")
 	packetF  bool
-	device   = packet.Flag("device", "Packet capturing device").String()
+	device   = packet.Flag("device", "Packet capturing device").Required().String()
 	promis   = packet.Flag("promis", "Promiscuous capturing packet").Default("false").Bool()
 	filter   = packet.Flag("filter", "Set packet capturing filter").Bool()
 	port     = packet.Flag("port", "Packet capturing fliter port").Uint64()
@@ -270,14 +270,6 @@ func init() {
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case packet.FullCommand():
 		packetF = true
-	}
-
-	if packetF {
-		if *device == "" {
-			fmt.Fprintln(os.Stderr, "Sorry, when packet capture mode, must select device.")
-			fmt.Fprintln(os.Stderr, "exit 1")
-			os.Exit(1)
-		}
 	}
 
 	if *filter {
