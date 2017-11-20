@@ -1,5 +1,5 @@
 # baketsu
-this is received byte stream, and do anything(toooooooooooooooooo speedy:bullettrain_side:).
+this is received byte stream, and do anything(toooooooooooooooooo:bullettrain_side:speedy:exclamation:).
 # What to do ?
 ## default
 - [x] receive stdin.
