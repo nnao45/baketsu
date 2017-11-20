@@ -7,6 +7,7 @@ this is received byte stream, and do anything(toooooooooooooooooo:bullettrain_si
 - [x] measure spped.
 - [x] measure using memory stat.
 - [x] output logging.
+- [x] set upper & lower threshold, and count over this.
 - [x] colorful :rainbow: (you want, cah be non-color).
 ## pcap mode(receive stdin -> receive packet)
 - [x] receive packet in select device.
