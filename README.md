@@ -3,11 +3,11 @@ this is received byte stream, and do anything in a rich option(and it's :bullett
 baketsu means, bucket in japanese.
 # What to do ?
 ## default
-- [x] receive stdin.
+- [x] receive stdin(result output to stderr).
 - [x] can pipe to stdout.
 - [x] measure spped.
 - [x] measure using memory stat.
-- [x] can output logging.
+- [x] can result output mirror log file.
 - [x] can set upper & lower threshold, and count over this.
 - [x] colorful :rainbow: (you want, cah be non-color).
 ## pcap mode(receive stdin -> receive packet)
