@@ -265,7 +265,7 @@ type Result struct {
 }
 
 func NewResult() *Result {
-	v := make([]interface{}, 10, 10)
+	v := make([]interface{}, 0, 10)
 	return &Result{
 		Var:       v,
 		Fixed:     "",
