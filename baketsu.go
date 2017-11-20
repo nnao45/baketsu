@@ -141,6 +141,7 @@ type DrawOut struct {
 	Time  string
 	Speed string
 	All   string
+	Foot  string
 }
 
 func NewDrawOut(p *Pallet) *DrawOut {
@@ -148,6 +149,7 @@ func NewDrawOut(p *Pallet) *DrawOut {
 		Time:  p.Green,
 		Speed: p.Cyan,
 		All:   p.Magenda,
+		Foot:  p.Plain,
 	}
 }
 
@@ -156,6 +158,7 @@ func (d *DrawOut) Whitify(p *Pallet) *DrawOut {
 		Time:  p.Plain,
 		Speed: p.Plain,
 		All:   p.Plain,
+		Foot:  p.Plain,
 	}
 }
 
@@ -403,7 +406,7 @@ func main() {
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
 			mark = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ", d.Time, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
-				d.Speed, round(lb.Measure, 2), lb.Unit, d.All, round(sb.Measure, 2), sb.Unit, p.Plain)
+				d.Speed, round(lb.Measure, 2), lb.Unit, d.All, round(sb.Measure, 2), sb.Unit, d.Foot)
 			if *upper || *lower {
 				mark = mark + fmt.Sprintf("OVER: %d times ", counter)
 			}
