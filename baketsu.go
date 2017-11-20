@@ -395,12 +395,12 @@ func main() {
 			lb, sb := new(Beaker), new(Beaker)
 			lb.truncByte(v.Lake, thropt, true)
 			d := NewDrawOut(p)
-			if *white {
-				d = d.Whitify(p)
-			}
 			if lb.Threshold {
 				d.Speed = p.Red
 				counter++
+			}
+			if *white {
+				d = d.Whitify(p)
 			}
 			sb.truncByte(v.Sea, thropt, false)
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
@@ -415,7 +415,6 @@ func main() {
 				mark = mark + fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 			}
 			if *log != "" {
-				d = d.Whitify(p)
 				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", mark), *log)
 				if err != nil {
 					panic(err)
