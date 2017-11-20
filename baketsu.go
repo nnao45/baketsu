@@ -107,7 +107,7 @@ const (
 	COLOR_MAGENDA_HEADER = "\x1b[35m"
 	COLOR_CYAN_HEADER    = "\x1b[36m"
 	COLOR_WHITE_HEADER   = "\x1b[37m"
-	COLOR_FOOTER         = "\x1b[0m"
+	COLOR_PLAIN_HEADER   = "\x1b[0m"
 )
 
 type Pallet struct {
@@ -119,7 +119,7 @@ type Pallet struct {
 	Magenda string
 	Cyan    string
 	White   string
-	Foot    string
+	Plain   string
 }
 
 func NewPallet() *Pallet {
@@ -132,9 +132,31 @@ func NewPallet() *Pallet {
 		Magenda: COLOR_MAGENDA_HEADER,
 		Cyan:    COLOR_CYAN_HEADER,
 		White:   COLOR_WHITE_HEADER,
-		Foot:    COLOR_FOOTER,
+		Plain:   COLOR_PLAIN_HEADER,
 	}
 
+}
+
+type DrawOut struct {
+	Time  string
+	Speed string
+	All   string
+}
+
+func NewDrawOut(p *Pallet) *DrawOut {
+	return &DrawOut{
+		Time:  p.Green,
+		Speed: p.Cyan,
+		All:   p.Magenda,
+	}
+}
+
+func (d *DrawOut) Whitify(p *Pallet) *DrawOut {
+	return &DrawOut{
+		Time:  p.Plain,
+		Speed: p.Plain,
+		All:   p.Plain,
+	}
 }
 
 type Beaker struct {
@@ -337,21 +359,17 @@ func init() {
 
 func main() {
 	baketsu := (*size * UNIT_MiBYTE)
-	v := new(Vessel)
 	mark := ""
+	v := new(Vessel)
 	t := new(time.Time)
 	start := time.Now()
 	tick := time.NewTicker(*interval)
-	var m runtime.MemStats
-	mode := "[S]"
-
 	p := NewPallet()
-	if *white {
-		p = new(Pallet)
-	}
-	var counter int
 	thropt := NewthrOpt()
+	var m runtime.MemStats
+	var counter int
 
+	mode := "[S]"
 	capCh := make(chan io.Reader)
 	if packetF {
 		mode = "[P]"
@@ -373,16 +391,19 @@ func main() {
 		case <-tick.C:
 			lb, sb := new(Beaker), new(Beaker)
 			lb.truncByte(v.Lake, thropt, true)
-			spdcolor := p.Cyan
+			d := NewDrawOut(p)
+			if *white {
+				d = d.Whitify(p)
+			}
 			if lb.Threshold {
-				spdcolor = p.Red
+				d.Speed = p.Red
 				counter++
 			}
 			sb.truncByte(v.Sea, thropt, false)
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
 			end := time.Now()
-			mark = fmt.Sprintf("%s%s Time: %s%s %sSpd: %.2f %s/s%s %sAll: %.2f %s%s ", p.Green, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), p.Foot,
-				spdcolor, round(lb.Measure, 2), lb.Unit, p.Foot, p.Magenda, round(sb.Measure, 2), sb.Unit, p.Foot)
+			mark = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ", d.Time, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
+				d.Speed, round(lb.Measure, 2), lb.Unit, d.All, round(sb.Measure, 2), sb.Unit, p.Plain)
 			if *upper || *lower {
 				mark = mark + fmt.Sprintf("OVER: %d times ", counter)
 			}
@@ -391,6 +412,7 @@ func main() {
 				mark = mark + fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 			}
 			if *log != "" {
+				d = d.Whitify(p)
 				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", mark), *log)
 				if err != nil {
 					panic(err)
