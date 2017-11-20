@@ -265,7 +265,8 @@ func IsIP(ip string) (b bool) {
 }
 
 func init() {
-	kingpin.Version(fmt.Sprint("baketsu's version: ", VERSION))
+	app.HelpFlag.Short('h')
+	app.Version(fmt.Sprint("baketsu's version: ", VERSION))
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case packet.FullCommand():
 		packetF = true
