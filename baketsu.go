@@ -37,7 +37,8 @@ var (
 
 	run = app.Command("run", "Running basic mode")
 
-	packet   = app.Command("packet", "Packet capture mode") //.Bool()
+	packet   = app.Command("packet", "Packet capture mode")
+	packetF  bool
 	device   = packet.Flag("device", "Packet capturing device").String()
 	promis   = packet.Flag("promis", "Promiscuous capturing packet").Default("false").Bool()
 	filter   = packet.Flag("filter", "Set packet capturing filter").Bool()
@@ -46,8 +47,6 @@ var (
 	dsthost  = packet.Flag("dsthost", "Packet capturing fliter dsthost").String()
 	srchost  = packet.Flag("srchost", "Packet capturing fliter dsthost").String()
 )
-
-var packetF bool
 
 const (
 	VERSION = "1.0.0"
