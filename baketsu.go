@@ -155,10 +155,10 @@ func NewDrawOut(p *Pallet) *DrawOut {
 
 func (d *DrawOut) Whitify(p *Pallet) *DrawOut {
 	return &DrawOut{
-		Time:  p.Plain,
-		Speed: p.Plain,
-		All:   p.Plain,
-		Foot:  p.Plain,
+		Time:  "",
+		Speed: "",
+		All:   "",
+		Foot:  "",
 	}
 }
 
