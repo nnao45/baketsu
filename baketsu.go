@@ -451,23 +451,19 @@ func main() {
 				counter++
 			}
 			if *white {
-				//d = d.Whitify(p)
 				result.Colorable = false
 			}
 			sb.truncByte(v.Sea, thropt, false)
 			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", delete))
 			end := time.Now()
-			//mark = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ", d.Time, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
-			//	d.Speed, round(lb.Measure, 2), lb.Unit, d.All, round(sb.Measure, 2), sb.Unit, d.Foot)
-			result.Var = []interface{}{mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
+			result.Var = []interface{}{mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
+				round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
 			result.Log, result.Fixed = result.Fix(d)
 			if *upper || *lower {
-				//mark = mark + fmt.Sprintf("OVER: %d times ", counter)
 				result.Thres = fmt.Sprintf("OVER: %d times ", counter)
 			}
 			if *memview {
 				runtime.ReadMemStats(&m)
-				//mark = mark + fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 				result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 			}
 			if *log != "" {
