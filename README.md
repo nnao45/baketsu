@@ -12,4 +12,5 @@ baketsu means, bucket in japanese.
 - [x] colorful :rainbow: (you want, cah be non-color).
 ## pcap mode(receive stdin -> receive packet)
 - [x] receive packet in select device.
+- [x] can be promiscuous mode.
 - [x] can set filter(port, protocol, dst ip, src ip...).
