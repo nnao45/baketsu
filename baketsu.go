@@ -12,37 +12,42 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
-	"regexp"
 )
 
 var (
-	interval = kingpin.Flag("interval", "Logging interval").Default("1000ms").Short('i').Duration()
-	pipe     = kingpin.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
-	size     = kingpin.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
-	memview  = kingpin.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
-	white    = kingpin.Flag("white", "Non color").Default("false").Short('w').Bool()
-	log      = kingpin.Flag("log", "baketsu's result output log file").String()
-	upper    = kingpin.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
-	lower    = kingpin.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
-	byt      = kingpin.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
-	kib      = kingpin.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
-	mib      = kingpin.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
-	gib      = kingpin.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
-	tib      = kingpin.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
+	app      = kingpin.New("app", "A baketsu application.")
+	interval = app.Flag("interval", "Logging interval").Default("1000ms").Short('i').Duration()
+	pipe     = app.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
+	size     = app.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
+	memview  = app.Flag("memview", "Memory viewer").Default("false").Short('v').Bool()
+	white    = app.Flag("white", "Non color").Default("false").Short('w').Bool()
+	log      = app.Flag("log", "baketsu's result output log file").String()
+	upper    = app.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
+	lower    = app.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
+	byt      = app.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
+	kib      = app.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
+	mib      = app.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
+	gib      = app.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
+	tib      = app.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 
-	packet   = kingpin.Flag("packet", "Packet capture mode").Bool()
-	device   = kingpin.Flag("device", "Packet capturing device").String()
-	promis   = kingpin.Flag("promis", "Promiscuous capturing packet").Default("false").Bool()
-	filter   = kingpin.Flag("filter", "Set packet capturing filter").Bool()
-	port     = kingpin.Flag("port", "Packet capturing fliter port").Uint64()
-	protocol = kingpin.Flag("protocol", "Packet capturing fliter protocol").String()
-	dsthost  = kingpin.Flag("dsthost", "Packet capturing fliter dsthost").String()
-	srchost  = kingpin.Flag("srchost", "Packet capturing fliter dsthost").String()
+	run = app.Command("run", "Running basic mode")
+
+	packet   = app.Command("packet", "Packet capture mode") //.Bool()
+	device   = packet.Flag("device", "Packet capturing device").String()
+	promis   = packet.Flag("promis", "Promiscuous capturing packet").Default("false").Bool()
+	filter   = packet.Flag("filter", "Set packet capturing filter").Bool()
+	port     = packet.Flag("port", "Packet capturing fliter port").Uint64()
+	protocol = packet.Flag("protocol", "Packet capturing fliter protocol").String()
+	dsthost  = packet.Flag("dsthost", "Packet capturing fliter dsthost").String()
+	srchost  = packet.Flag("srchost", "Packet capturing fliter dsthost").String()
 )
+
+var packetF bool
 
 const (
 	VERSION = "1.0.0"
@@ -262,9 +267,12 @@ func IsIP(ip string) (b bool) {
 
 func init() {
 	kingpin.Version(fmt.Sprint("baketsu's version: ", VERSION))
-	kingpin.Parse()
+	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	case packet.FullCommand():
+		packetF = true
+	}
 
-	if *packet {
+	if packetF {
 		if *device == "" {
 			fmt.Fprintln(os.Stderr, "Sorry, when packet capture mode, must select device.")
 			fmt.Fprintln(os.Stderr, "exit 1")
@@ -285,14 +293,14 @@ func init() {
 		}
 		if *srchost != "" && !IsIP(*srchost) {
 			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, src host is IPv4 format.")
-                        fmt.Fprintln(os.Stderr, "exit 1")
-                        os.Exit(1)
+			fmt.Fprintln(os.Stderr, "exit 1")
+			os.Exit(1)
 		}
 		if *dsthost != "" && !IsIP(*dsthost) {
-                        fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, dst host is IPv4 format.")
-                        fmt.Fprintln(os.Stderr, "exit 1")
-                        os.Exit(1)
-                }
+			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, dst host is IPv4 format.")
+			fmt.Fprintln(os.Stderr, "exit 1")
+			os.Exit(1)
+		}
 	}
 
 	if *upper && *lower {
@@ -347,7 +355,7 @@ func main() {
 	thropt := NewthrOpt()
 
 	capCh := make(chan io.Reader)
-	if *packet {
+	if packetF {
 		mode = "[P]"
 		go pcapture(capCh, baketsu)
 	}
@@ -355,7 +363,7 @@ func main() {
 	for {
 		select {
 		default:
-			if !*packet {
+			if !packetF {
 				water := new(Water)
 				water.Scoop(ioutil.Discard, os.Stdin, baketsu)
 				v.Lake = v.Lake + water.Size
