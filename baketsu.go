@@ -293,6 +293,12 @@ func init() {
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
+	} else {
+		if *protocol != "" || *port != 0 || *srchost != "" || *dsthost != "" {
+			fmt.Fprintln(os.Stderr, "Sorry, this option only using when set packet capture fliter.")
+			fmt.Fprintln(os.Stderr, "exit 1")
+			os.Exit(1)
+		}
 	}
 
 	if *upper && *lower {
