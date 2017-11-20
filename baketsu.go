@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	app      = kingpin.New("app", "A baketsu application.")
+	app      = kingpin.New("baketsu", "A baketsu application.")
 	interval = app.Flag("interval", "Logging interval").Default("1000ms").Short('i').Duration()
 	pipe     = app.Flag("pipe", "Output pipe to os.Stdout").Default("false").Short('p').Bool()
 	size     = app.Flag("size", "Baketsu size").Default("100").Short('s').Int64()
