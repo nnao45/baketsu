@@ -289,6 +289,56 @@ func IsIP(ip string) (b bool) {
 	return true
 }
 
+type Result struct {
+	Var       []interface{}
+	Fixed     string
+	Log       string
+	Thres     string
+	Memstat   string
+	Colorable bool
+}
+
+func NewResult() *Result {
+	return &Result{
+		Var:       nil,
+		Fixed:     "",
+		Log:       "",
+		Thres:     "",
+		Memstat:   "",
+		Colorable: true,
+	}
+}
+
+func (r *Result) Fix(d *DrawOut) (l, s string) {
+	var ary []interface{}
+	if r.Colorable {
+		for i, v := range r.Var {
+			if i == 0 {
+				ary = append(ary, d.Time)
+			} else if i == 2 {
+				ary = append(ary, d.Speed)
+			} else if i == 4 {
+				ary = append(ary, d.All)
+			}
+			ary = append(ary, v)
+		}
+		ary = append(ary, d.Foot)
+	}
+
+	if *log != "" {
+		l = fmt.Sprintf("%s Time: %s Spd: %.2f %s/s All: %.2f %s ",
+			r.Var[0], r.Var[1], r.Var[2], r.Var[3], r.Var[4], r.Var[5])
+	}
+	if r.Colorable {
+		s = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ",
+			ary[0], ary[1], ary[2], ary[3], ary[4], ary[5], ary[6], ary[7], ary[8], ary[9])
+	} else {
+		s = fmt.Sprintf("%s Time: %s Spd: %.2f %s/s All: %.2f %s ",
+			r.Var[0], r.Var[1], r.Var[2], r.Var[3], r.Var[4], r.Var[5])
+	}
+	return
+}
+
 func init() {
 	app.HelpFlag.Short('h')
 	app.Version(fmt.Sprint("baketsu's version: ", VERSION))
@@ -362,9 +412,9 @@ func init() {
 
 func main() {
 	baketsu := (*size * UNIT_MiBYTE)
-	mark := ""
 	v := new(Vessel)
 	t := new(time.Time)
+	delete := 0
 	start := time.Now()
 	tick := time.NewTicker(*interval)
 	p := NewPallet()
@@ -392,6 +442,7 @@ func main() {
 			water.Scoop(ioutil.Discard, b, baketsu)
 			v.Lake = v.Lake + water.Size
 		case <-tick.C:
+			result := NewResult()
 			lb, sb := new(Beaker), new(Beaker)
 			lb.truncByte(v.Lake, thropt, true)
 			d := NewDrawOut(p)
@@ -400,27 +451,33 @@ func main() {
 				counter++
 			}
 			if *white {
-				d = d.Whitify(p)
+				//d = d.Whitify(p)
+				result.Colorable = false
 			}
 			sb.truncByte(v.Sea, thropt, false)
-			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(mark)))
+			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", delete))
 			end := time.Now()
-			mark = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ", d.Time, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
-				d.Speed, round(lb.Measure, 2), lb.Unit, d.All, round(sb.Measure, 2), sb.Unit, d.Foot)
+			//mark = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ", d.Time, mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
+			//	d.Speed, round(lb.Measure, 2), lb.Unit, d.All, round(sb.Measure, 2), sb.Unit, d.Foot)
+			result.Var = []interface{}{mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)), round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
+			result.Log, result.Fixed = result.Fix(d)
 			if *upper || *lower {
-				mark = mark + fmt.Sprintf("OVER: %d times ", counter)
+				//mark = mark + fmt.Sprintf("OVER: %d times ", counter)
+				result.Thres = fmt.Sprintf("OVER: %d times ", counter)
 			}
 			if *memview {
 				runtime.ReadMemStats(&m)
-				mark = mark + fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
+				//mark = mark + fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
+				result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 			}
 			if *log != "" {
-				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", mark), *log)
+				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.Log+result.Thres+result.Memstat), *log)
 				if err != nil {
 					panic(err)
 				}
 			}
-			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", mark)
+			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (result.Fixed + result.Thres + result.Memstat))
+			delete = len(result.Fixed)
 			v.Transfer()
 		}
 	}
