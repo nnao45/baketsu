@@ -42,6 +42,7 @@ var (
 	scanF bool
 	word  = scan.Flag("word", "Count match 1 char when scanning").String()
 	wordR rune
+	cha   = scan.Flag("cha", "Unit Char of threshold(rune)").Int64()
 	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
 	bil   = scan.Flag("bil", "Unit Billion of threshold(rune)").Int64()
@@ -81,6 +82,10 @@ type ThrOpt struct {
 	MiB  int64
 	GiB  int64
 	TiB  int64
+	CHA  int64
+	HUN  int64
+	MIL  int64
+	BIL  int64
 }
 
 func NewthrOpt() *ThrOpt {
@@ -90,6 +95,10 @@ func NewthrOpt() *ThrOpt {
 		MiB:  *mib * UNIT_MiBYTE,
 		GiB:  *gib * UNIT_GiBYTE,
 		TiB:  *tib * UNIT_TiBYTE,
+		CHA:  *cha,
+		HUN:  *hun * UNIT_HUNDRE,
+		MIL:  *mil * UNIT_MILLI,
+		BIL:  *bil * UNIT_BILLI,
 	}
 }
 
@@ -105,6 +114,14 @@ func (t *ThrOpt) IsUse() int64 {
 		i = t.GiB
 	} else if t.TiB != 0 {
 		i = t.TiB
+	} else if t.CHA != 0 {
+		i = t.CHA
+	} else if t.HUN != 0 {
+		i = t.HUN
+	} else if t.MIL != 0 {
+		i = t.MIL
+	} else if t.BIL != 0 {
+		i = t.BIL
 	}
 	return i
 }
@@ -368,15 +385,31 @@ func (r *Result) Fix(d *DrawOut) (l, s string) {
 		ary = append(ary, d.Foot)
 	}
 
+	basic := "%s Time: %s Spd: %.2f %s/s All: %.2f %s "
+	bColor := "%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s "
+	cha := "%s Time: %s Spd: %v %s/s All: %v %s "
+	cColor := "%s%s Time: %s %sSpd: %v %s/s %sAll: %v %s%s "
+
+	var basicformat string
+	var colorformat string
+
+	if !scanF {
+		basicformat = basic
+		colorformat = bColor
+	} else {
+		basicformat = cha
+		colorformat = cColor
+	}
+
 	if *log != "" {
-		l = fmt.Sprintf("%s Time: %s Spd: %.2f %s/s All: %.2f %s ",
+		l = fmt.Sprintf(basicformat,
 			r.Var[0], r.Var[1], r.Var[2], r.Var[3], r.Var[4], r.Var[5])
 	}
 	if r.Colorable {
-		s = fmt.Sprintf("%s%s Time: %s %sSpd: %.2f %s/s %sAll: %.2f %s%s ",
+		s = fmt.Sprintf(colorformat,
 			ary[0], ary[1], ary[2], ary[3], ary[4], ary[5], ary[6], ary[7], ary[8], ary[9])
 	} else {
-		s = fmt.Sprintf("%s Time: %s Spd: %.2f %s/s All: %.2f %s ",
+		s = fmt.Sprintf(basicformat,
 			r.Var[0], r.Var[1], r.Var[2], r.Var[3], r.Var[4], r.Var[5])
 	}
 	return
@@ -438,7 +471,12 @@ func init() {
 		fmt.Fprintln(os.Stderr, "exit 1")
 		os.Exit(1)
 	}
-	check := []int64{*byt, *kib, *mib, *gib, *tib}
+	var check []int64
+	if !scanF {
+		check = []int64{*byt, *kib, *mib, *gib, *tib}
+	} else {
+		check = []int64{*cha, *hun, *mil, *bil}
+	}
 	var i int
 	var k int
 	for _, c := range check {
