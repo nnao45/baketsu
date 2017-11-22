@@ -40,7 +40,7 @@ var (
 
 	scan  = app.Command("scan", "Byte stream word scanner")
 	scanF bool
-	word  = scan.Flag("word", "Match 1 word when scanning").String()
+	word  = scan.Flag("word", "Count match 1 char when scanning").String()
 	wordR rune
 	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
