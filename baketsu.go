@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var (
@@ -36,6 +37,10 @@ var (
 	tib      = app.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
 
 	run = app.Command("run", "Running basic mode")
+
+	scan  = app.Command("scan", "Byte stream scanner")
+	scanF bool
+	word  = scan.Flag("word", "Match word count").String()
 
 	packet   = app.Command("packet", "Packet capture mode")
 	packetF  bool
@@ -57,6 +62,10 @@ const (
 	UNIT_MiBYTE = 1048576
 	UNIT_GiBYTE = 1073741824
 	UNIT_TiBYTE = 1099511627776
+)
+
+const (
+	WORD_BUFFER = 512
 )
 
 type ThrOpt struct {
@@ -193,15 +202,40 @@ func (b *Beaker) truncByte(i int64, t *ThrOpt, IsLake bool) *Beaker {
 }
 
 type Water struct {
-	Size int64
+	Size  int64
+	SizeS int
+	Match int
+	Count int
 }
 
 func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
+	//b := make([]byte, 0, int(baketsu))
 	if *pipe {
 		out = os.Stdout
 	}
+	var str string
+	var i int
 
-	w.Size, _ = io.CopyN(out, in, baketsu)
+	if !scanF {
+		w.Size, _ = io.CopyN(out, in, baketsu)
+	} else {
+		scanner := bufio.NewScanner(in)
+		for scanner.Scan() {
+			t := scanner.Text()
+			if *word != "" {
+				if strings.Contains(t, *word) {
+					w.Match++
+				}
+			}
+			str = str + t
+			i++
+			if i == WORD_BUFFER {
+				break
+			}
+		}
+		w.Count = utf8.RuneCountInString(str)
+	}
+
 	return w
 }
 
@@ -245,8 +279,9 @@ func pcapture(capCh chan io.Reader, baketsu int64) {
 }
 
 type Vessel struct {
-	Lake int64
-	Sea  int64
+	Lake   int64
+	Sea    int64
+	Bucket int
 }
 
 func (v *Vessel) Transfer() *Vessel {
@@ -261,6 +296,7 @@ type Result struct {
 	Log       string
 	Thres     string
 	Memstat   string
+	Matchstat string
 	Colorable bool
 }
 
@@ -272,13 +308,13 @@ func NewResult() *Result {
 		Log:       "",
 		Thres:     "",
 		Memstat:   "",
+		Matchstat: "",
 		Colorable: true,
 	}
 }
 
 func (r *Result) Fix(d *DrawOut) (l, s string) {
 	ary := make([]interface{}, 0, 10)
-	//var ary []interface{}
 	if r.Colorable {
 		for i, v := range r.Var {
 			if i == 0 {
@@ -292,6 +328,9 @@ func (r *Result) Fix(d *DrawOut) (l, s string) {
 		}
 		ary = append(ary, d.Foot)
 	}
+
+	basic := "%s Time: %s Spd: %.2f %s/s All: %.2f %s "
+	scan := "%s Time: %s Spd: %d %s/s All: %d %s "
 
 	if *log != "" {
 		l = fmt.Sprintf("%s Time: %s Spd: %.2f %s/s All: %.2f %s ",
@@ -308,11 +347,11 @@ func (r *Result) Fix(d *DrawOut) (l, s string) {
 }
 
 func (r *Result) SumF() string {
-	return r.Fixed + r.Thres + r.Memstat
+	return r.Fixed + r.Thres + r.Matchstat + r.Memstat
 }
 
 func (r *Result) SumL() string {
-	return r.Log + r.Thres + r.Memstat
+	return r.Log + r.Thres + r.Matchstat + r.Memstat
 }
 
 func init() {
@@ -321,6 +360,8 @@ func init() {
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case packet.FullCommand():
 		packetF = true
+	case scan.FullCommand():
+		scanF = true
 	}
 
 	if *filter {
@@ -398,11 +439,14 @@ func main() {
 	var m runtime.MemStats
 	var counter int
 
-	mode := "[S]"
+	mode := "[B]"
 	capCh := make(chan io.Reader)
 	if packetF {
 		mode = "[P]"
 		go pcapture(capCh, baketsu)
+	}
+	if scanF {
+		mode = "[S]"
 	}
 
 	for {
@@ -411,7 +455,13 @@ func main() {
 			if !packetF {
 				water := new(Water)
 				water.Scoop(ioutil.Discard, os.Stdin, baketsu)
-				v.Lake = v.Lake + water.Size
+				if scanF {
+					v.Lake = v.Lake + int64(water.Count)
+					v.Bucket = v.Bucket + water.Match
+				} else {
+					v.Lake = v.Lake + water.Size
+				}
+
 			}
 		case b := <-capCh:
 			water := new(Water)
@@ -436,11 +486,14 @@ func main() {
 				round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
 			result.Log, result.Fixed = result.Fix(d)
 			if *upper || *lower {
-				result.Thres = fmt.Sprintf("OVER: %d times ", counter)
+				result.Thres = fmt.Sprintf("Over: %d times ", counter)
 			}
 			if *memview {
 				runtime.ReadMemStats(&m)
 				result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
+			}
+			if *word != "" {
+				result.Matchstat = fmt.Sprintf("Match: %d Char ", v.Bucket)
 			}
 			if *log != "" {
 				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.SumL()), *log)
