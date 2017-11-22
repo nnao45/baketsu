@@ -493,7 +493,7 @@ func main() {
 				result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
 			}
 			if *word != "" {
-				result.Matchstat = fmt.Sprintf("Match: %d Char ", v.Bucket)
+				result.Matchstat = fmt.Sprintf("Match: %d Word ", v.Bucket)
 			}
 			if *log != "" {
 				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.SumL()), *log)
