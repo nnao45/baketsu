@@ -30,17 +30,21 @@ var (
 	log      = app.Flag("log", "baketsu's result output log file").String()
 	upper    = app.Flag("upper", "Info & Count up to threshold(byte)").Default("false").Short('u').Bool()
 	lower    = app.Flag("lower", "Info & Count below threshold(byte)").Default("false").Short('l').Bool()
-	byt      = app.Flag("byt", "Unit Byte of threshold(byte)").Short('b').Int64()
-	kib      = app.Flag("kib", "Unit KiB of threshold(byte)").Short('k').Int64()
-	mib      = app.Flag("mib", "Unit MiB of threshold(byte)").Short('m').Int64()
-	gib      = app.Flag("gib", "Unit GiB of threshold(byte)").Short('g').Int64()
-	tib      = app.Flag("tib", "Unit TiB of threshold(byte)").Short('t').Int64()
+	byt      = app.Flag("byt", "Unit Byte of threshold(byte)").Int64()
+	kib      = app.Flag("kib", "Unit KiB of threshold(byte)").Int64()
+	mib      = app.Flag("mib", "Unit MiB of threshold(byte)").Int64()
+	gib      = app.Flag("gib", "Unit GiB of threshold(byte)").Int64()
+	tib      = app.Flag("tib", "Unit TiB of threshold(byte)").Int64()
 
 	run = app.Command("run", "Running basic mode")
 
 	scan  = app.Command("scan", "Byte stream word scanner")
 	scanF bool
-	word  = scan.Flag("word", "Match word count").String()
+	word  = scan.Flag("word", "Match 1 word when scanning").String()
+	wordR rune
+	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
+	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
+	bil   = scan.Flag("bil", "Unit Billion of threshold(rune)").Int64()
 
 	packet   = app.Command("packet", "Packet capture mode")
 	packetF  bool
@@ -62,6 +66,9 @@ const (
 	UNIT_MiBYTE = 1048576
 	UNIT_GiBYTE = 1073741824
 	UNIT_TiBYTE = 1099511627776
+	UNIT_HUNDRE = 100
+	UNIT_MILLI  = 1000000
+	UNIT_BILLI  = 1000000000
 )
 
 const (
@@ -201,6 +208,37 @@ func (b *Beaker) truncByte(i int64, t *ThrOpt, IsLake bool) *Beaker {
 	return b
 }
 
+func (b *Beaker) truncWord(i int64, t *ThrOpt, IsLake bool) *Beaker {
+
+	if i < UNIT_HUNDRE {
+		b.Measure = float64(i)
+		b.Unit = "Char"
+	} else if i < UNIT_MILLI {
+		b.Measure = float64(i) / float64(UNIT_HUNDRE)
+		b.Unit = "Hundred Char"
+	} else if i < UNIT_BILLI {
+		b.Measure = float64(i) / float64(UNIT_MILLI)
+		b.Unit = "Million Char"
+	} else if i >= UNIT_BILLI {
+		b.Measure = float64(i) / float64(UNIT_BILLI)
+		b.Unit = "Billion Char"
+	}
+
+	if IsLake {
+		if *upper {
+			if i > t.IsUse() {
+				b.Threshold = true
+			}
+		}
+		if *lower {
+			if i < t.IsUse() {
+				b.Threshold = true
+			}
+		}
+	}
+	return b
+}
+
 type Water struct {
 	Size  int64
 	SizeS int
@@ -209,7 +247,6 @@ type Water struct {
 }
 
 func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
-	//b := make([]byte, 0, int(baketsu))
 	if *pipe {
 		out = os.Stdout
 	}
@@ -223,8 +260,10 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 		for scanner.Scan() {
 			t := scanner.Text()
 			if *word != "" {
-				if strings.Contains(t, *word) {
-					w.Match++
+				for _, run := range t {
+					if run == wordR {
+						w.Match++
+					}
 				}
 			}
 			str = str + t
@@ -329,9 +368,6 @@ func (r *Result) Fix(d *DrawOut) (l, s string) {
 		ary = append(ary, d.Foot)
 	}
 
-	basic := "%s Time: %s Spd: %.2f %s/s All: %.2f %s "
-	scan := "%s Time: %s Spd: %d %s/s All: %d %s "
-
 	if *log != "" {
 		l = fmt.Sprintf("%s Time: %s Spd: %.2f %s/s All: %.2f %s ",
 			r.Var[0], r.Var[1], r.Var[2], r.Var[3], r.Var[4], r.Var[5])
@@ -391,6 +427,10 @@ func init() {
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
+	}
+
+	if *word != "" {
+		wordR, _ = utf8.DecodeRuneInString(*word)
 	}
 
 	if *upper && *lower {
@@ -461,48 +501,57 @@ func main() {
 				} else {
 					v.Lake = v.Lake + water.Size
 				}
-
 			}
 		case b := <-capCh:
 			water := new(Water)
 			water.Scoop(ioutil.Discard, b, baketsu)
 			v.Lake = v.Lake + water.Size
 		case <-tick.C:
-			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(result.SumF())))
-			result = NewResult()
-			lb, sb := new(Beaker), new(Beaker)
-			lb.truncByte(v.Lake, thropt, true)
-			d := NewDrawOut(p)
-			if lb.Threshold {
-				d.Speed = p.Red
-				counter++
-			}
-			if *white {
-				result.Colorable = false
-			}
-			sb.truncByte(v.Sea, thropt, false)
-			end := time.Now()
-			result.Var = []interface{}{mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
-				round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
-			result.Log, result.Fixed = result.Fix(d)
-			if *upper || *lower {
-				result.Thres = fmt.Sprintf("Over: %d times ", counter)
-			}
-			if *memview {
-				runtime.ReadMemStats(&m)
-				result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
-			}
-			if *word != "" {
-				result.Matchstat = fmt.Sprintf("Match: %d Word ", v.Bucket)
-			}
-			if *log != "" {
-				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.SumL()), *log)
-				if err != nil {
-					panic(err)
+			go func() {
+				fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(result.SumF())))
+				result = NewResult()
+				lb, sb := new(Beaker), new(Beaker)
+				if !scanF {
+					lb.truncByte(v.Lake, thropt, true)
+				} else {
+					lb.truncWord(v.Lake, thropt, true)
 				}
-			}
-			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (result.SumF()))
-			v.Transfer()
+				d := NewDrawOut(p)
+				if lb.Threshold {
+					d.Speed = p.Red
+					counter++
+				}
+				if *white {
+					result.Colorable = false
+				}
+				if !scanF {
+					sb.truncByte(v.Sea, thropt, false)
+				} else {
+					sb.truncWord(v.Sea, thropt, false)
+				}
+				end := time.Now()
+				result.Var = []interface{}{mode, fmt.Sprint(t.Add(end.Sub(start)).Format(TIME_FORMAT)),
+					round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
+				result.Log, result.Fixed = result.Fix(d)
+				if *upper || *lower {
+					result.Thres = fmt.Sprintf("Over: %d times ", counter)
+				}
+				if *memview {
+					runtime.ReadMemStats(&m)
+					result.Memstat = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", m.HeapSys, m.HeapAlloc, m.HeapIdle, m.HeapReleased)
+				}
+				if *word != "" {
+					result.Matchstat = fmt.Sprintf("Match: %d Char ", v.Bucket)
+				}
+				if *log != "" {
+					err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", result.SumL()), *log)
+					if err != nil {
+						panic(err)
+					}
+				}
+				fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (result.SumF()))
+				v.Transfer()
+			}()
 		}
 	}
 }
