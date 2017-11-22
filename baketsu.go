@@ -38,7 +38,7 @@ var (
 
 	run = app.Command("run", "Running basic mode")
 
-	scan  = app.Command("scan", "Byte stream scanner")
+	scan  = app.Command("scan", "Byte stream word scanner")
 	scanF bool
 	word  = scan.Flag("word", "Match word count").String()
 
