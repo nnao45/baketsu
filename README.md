@@ -5,6 +5,7 @@ baketsu means bucket in japanese.
 ## default
 - [x] receive stdin(and result output to stderr).
 - [x] can pipe to stdout.
+- [x] can match word count.
 - [x] measure spped.
 - [x] measure using memory stat.
 - [x] can result output mirror log file.
