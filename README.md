@@ -1,16 +1,18 @@
 # baketsu :inbox_tray:
-this is received byte stream, and do anything in a rich option(and it's :bullettrain_side: fast:exclamation:).  
+This is received byte stream, and do anything in a rich option(and it's :bullettrain_side: fast:exclamation:).  
 baketsu means bucket in japanese.
 # What to do ?
 ## default
-- [x] receive stdin(and result output to stderr).
-- [x] can pipe to stdout.
-- [x] can match word count.
-- [x] measure spped.
-- [x] measure using memory stat.
-- [x] can result output mirror log file.
-- [x] can set upper & lower threshold, and count over this.
-- [x] colorful :rainbow: (you want, cah be non-color).
+- [x] Receive stdin(and result output to stderr).
+- [x] Can pipe to stdout.
+- [x] Measure spped.
+- [x] Measure using memory stat.
+- [x] Can result output mirror log file.
+- [x] Can set upper & lower threshold, and count over this.
+- [x] Colorful :rainbow: (you want, cah be non-color).
+## char scan mode(count char)
+- [x] Count how many received chars.
+- [x] Can match word count.
 ## pcap mode(receive stdin -> receive packet)
 - [x] receive packet in select device.
 - [x] can be promiscuous mode.
