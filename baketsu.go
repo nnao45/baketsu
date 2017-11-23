@@ -594,51 +594,49 @@ func main() {
 			water.Scoop(ioutil.Discard, p, b.Baketsu)
 			b.SumBasicLake(water)
 		case <-b.Ticker.C:
-			go func() {
-				fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(b.Result.SumF())))
-				b.Result = NewResult()
-				lb, sb := new(Beaker), new(Beaker)
-				if !scanF {
-					lb.truncByte(b.Vessel.Lake, b.ThrOpt, true)
-				} else {
-					lb.truncWord(b.Vessel.Lake, b.ThrOpt, true)
+			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(b.Result.SumF())))
+			b.Result = NewResult()
+			lb, sb := new(Beaker), new(Beaker)
+			if !scanF {
+				lb.truncByte(b.Vessel.Lake, b.ThrOpt, true)
+			} else {
+				lb.truncWord(b.Vessel.Lake, b.ThrOpt, true)
+			}
+			d := NewDrawOut(b.Pallet)
+			if lb.Threshold {
+				d.Speed = b.Pallet.Red
+				b.Counter++
+			}
+			if *white {
+				b.Result.Colorable = false
+			}
+			if !scanF {
+				sb.truncByte(b.Vessel.Sea, b.ThrOpt, false)
+			} else {
+				sb.truncWord(b.Vessel.Sea, b.ThrOpt, false)
+			}
+			end := time.Now()
+			b.Result.Var = []interface{}{b.Mode, fmt.Sprint(b.Time.Add(end.Sub(b.Start)).Format(TIME_FORMAT)),
+				round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
+			b.Result.Log, b.Result.Fixed = b.Result.Fix(d, b.Format)
+			if *upper || *lower {
+				b.Result.Thres = fmt.Sprintf("Over: %d times ", b.Counter)
+			}
+			if *memview {
+				runtime.ReadMemStats(b.MemStats)
+				b.Result.MemStats = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", b.MemStats.HeapSys, b.MemStats.HeapAlloc, b.MemStats.HeapIdle, b.MemStats.HeapReleased)
+			}
+			if *word != "" {
+				b.Result.Matchstat = fmt.Sprintf("Match: %d Char ", b.Vessel.Bucket)
+			}
+			if *log != "" {
+				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", b.Result.SumL()), *log)
+				if err != nil {
+					panic(err)
 				}
-				d := NewDrawOut(b.Pallet)
-				if lb.Threshold {
-					d.Speed = b.Pallet.Red
-					b.Counter++
-				}
-				if *white {
-					b.Result.Colorable = false
-				}
-				if !scanF {
-					sb.truncByte(b.Vessel.Sea, b.ThrOpt, false)
-				} else {
-					sb.truncWord(b.Vessel.Sea, b.ThrOpt, false)
-				}
-				end := time.Now()
-				b.Result.Var = []interface{}{b.Mode, fmt.Sprint(b.Time.Add(end.Sub(b.Start)).Format(TIME_FORMAT)),
-					round(lb.Measure, 2), lb.Unit, round(sb.Measure, 2), sb.Unit}
-				b.Result.Log, b.Result.Fixed = b.Result.Fix(d, b.Format)
-				if *upper || *lower {
-					b.Result.Thres = fmt.Sprintf("Over: %d times ", b.Counter)
-				}
-				if *memview {
-					runtime.ReadMemStats(b.MemStats)
-					b.Result.MemStats = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", b.MemStats.HeapSys, b.MemStats.HeapAlloc, b.MemStats.HeapIdle, b.MemStats.HeapReleased)
-				}
-				if *word != "" {
-					b.Result.Matchstat = fmt.Sprintf("Match: %d Char ", b.Vessel.Bucket)
-				}
-				if *log != "" {
-					err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", b.Result.SumL()), *log)
-					if err != nil {
-						panic(err)
-					}
-				}
-				fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (b.Result.SumF()))
-				b.Vessel.Transfer()
-			}()
+			}
+			fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", (b.Result.SumF()))
+			b.Vessel.Transfer()
 		}
 	}
 }
