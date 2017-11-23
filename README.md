@@ -1,5 +1,5 @@
 # baketsu :inbox_tray:
-This is received byte stream, and do anything in a rich option(and it's :bullettrain_side: fast:exclamation:).  
+This is received byte stream, and do anything with rich options(and it's :bullettrain_side: fast:exclamation:).  
 baketsu means bucket in japanese.
 # What to do ?
 ## default
