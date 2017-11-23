@@ -285,6 +285,8 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 						} else if k == len(wordR)-1 {
 							w.Match++
 						}
+					} else {
+						k = 0
 					}
 				}
 			}
