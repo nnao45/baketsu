@@ -469,6 +469,21 @@ func NewBase() *Base {
 	}
 }
 
+func (b *Base) SumBasicLake(w *Water) *Base {
+	b.Vessel.Lake = b.Vessel.Lake + w.Size
+	return b
+}
+
+func (b *Base) SumCharLake(w *Water) *Base {
+	b.Vessel.Lake = b.Vessel.Lake + int64(w.Count)
+	return b
+}
+
+func (b *Base) SumCharBucket(w *Water) *Base {
+	b.Vessel.Bucket = b.Vessel.Bucket + w.Match
+	return b
+}
+
 func init() {
 	app.HelpFlag.Short('h')
 	app.Version(fmt.Sprint("baketsu's version: ", VERSION))
@@ -568,16 +583,16 @@ func main() {
 				water := new(Water)
 				water.Scoop(ioutil.Discard, os.Stdin, b.Baketsu)
 				if scanF {
-					b.Vessel.Lake = b.Vessel.Lake + int64(water.Count)
-					b.Vessel.Bucket = b.Vessel.Bucket + water.Match
+					b.SumCharLake(water)
+					b.SumCharBucket(water)
 				} else {
-					b.Vessel.Lake = b.Vessel.Lake + water.Size
+					b.SumBasicLake(water)
 				}
 			}
 		case p := <-b.CapCh:
 			water := new(Water)
 			water.Scoop(ioutil.Discard, p, b.Baketsu)
-			b.Vessel.Lake = b.Vessel.Lake + water.Size
+			b.SumBasicLake(water)
 		case <-b.Ticker.C:
 			go func() {
 				fmt.Fprintf(colorable.NewColorableStderr(), "\r%s", strings.Repeat(" ", len(b.Result.SumF())))
