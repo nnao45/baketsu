@@ -434,6 +434,41 @@ func (r *Result) SumL() string {
 	return r.Log + r.Thres + r.Matchstat + r.MemStats
 }
 
+type Base struct {
+	Baketsu  int64
+	Vessel   *Vessel
+	Time     *time.Time
+	Result   *Result
+	Start    time.Time
+	Ticker   *time.Ticker
+	Pallet   *Pallet
+	Format   *Format
+	ThrOpt   *ThrOpt
+	MemStats *runtime.MemStats
+	Counter  int
+	Mode     string
+	CapCh    chan io.Reader
+}
+
+func NewBase() *Base {
+	capCh := make(chan io.Reader)
+	return &Base{
+		Baketsu:  (*size * UNIT_MiBYTE),
+		Vessel:   new(Vessel),
+		Time:     new(time.Time),
+		Result:   NewResult(),
+		Start:    time.Now(),
+		Ticker:   time.NewTicker(*interval),
+		Pallet:   NewPallet(),
+		Format:   NewFormat(),
+		ThrOpt:   NewThrOpt(),
+		MemStats: new(runtime.MemStats),
+		Counter:  0,
+		Mode:     "[B]",
+		CapCh:    capCh,
+	}
+}
+
 func init() {
 	app.HelpFlag.Short('h')
 	app.Version(fmt.Sprint("baketsu's version: ", VERSION))
@@ -513,41 +548,6 @@ func init() {
 		fmt.Fprintln(os.Stderr, "Sorry, baketshu's threshold option must used lower or upper with unit option.")
 		fmt.Fprintln(os.Stderr, "exit 1")
 		os.Exit(1)
-	}
-}
-
-type Base struct {
-	Baketsu  int64
-	Vessel   *Vessel
-	Time     *time.Time
-	Result   *Result
-	Start    time.Time
-	Ticker   *time.Ticker
-	Pallet   *Pallet
-	Format   *Format
-	ThrOpt   *ThrOpt
-	MemStats *runtime.MemStats
-	Counter  int
-	Mode     string
-	CapCh    chan io.Reader
-}
-
-func NewBase() *Base {
-	capCh := make(chan io.Reader)
-	return &Base{
-		Baketsu:  (*size * UNIT_MiBYTE),
-		Vessel:   new(Vessel),
-		Time:     new(time.Time),
-		Result:   NewResult(),
-		Start:    time.Now(),
-		Ticker:   time.NewTicker(*interval),
-		Pallet:   NewPallet(),
-		Format:   NewFormat(),
-		ThrOpt:   NewThrOpt(),
-		MemStats: new(runtime.MemStats),
-		Counter:  0,
-		Mode:     "[B]",
-		CapCh:    capCh,
 	}
 }
 
