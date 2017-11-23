@@ -9,7 +9,7 @@ baketsu means bucket in japanese.
 - [x] Measure using memory stat.
 - [x] Can result output mirror log file.
 - [x] Can set upper & lower threshold, and count over this.
-- [x] Colorful :rainbow: (you want, cah be non-color).
+- [x] Colorful :rainbow: (you want, can be non-color).
 ## char scan mode(count char)
 - [x] Count how many received chars.
 - [x] Can match word count.
