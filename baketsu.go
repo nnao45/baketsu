@@ -38,7 +38,7 @@ var (
 
 	run = app.Command("run", "Running basic mode")
 
-	scan  = app.Command("scan", "Byte stream word scanner")
+	scan  = app.Command("scan", "Receive string stream with word scanner")
 	scanF bool
 	word  = scan.Flag("word", "Count match 1 char when scanning").String()
 	wordR rune
