@@ -40,8 +40,8 @@ var (
 
 	scan  = app.Command("scan", "Receive string stream with word scanner")
 	scanF bool
-	word  = scan.Flag("word", "Count match 1 char when scanning").String()
-	wordR rune
+	word  = scan.Flag("word", "Count match word when scanning").String()
+	wordR []rune
 	cha   = scan.Flag("cha", "Unit Char of threshold(rune)").Int64()
 	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
@@ -269,6 +269,7 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 	}
 	var str string
 	var i int
+	var k int
 
 	if !scanF {
 		w.Size, _ = io.CopyN(out, in, baketsu)
@@ -278,8 +279,12 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 			t := scanner.Text()
 			if *word != "" {
 				for _, run := range t {
-					if run == wordR {
-						w.Match++
+					if run == wordR[k] {
+						if k < len(wordR)-1 {
+							k++
+						} else if k == len(wordR)-1 {
+							w.Match++
+						}
 					}
 				}
 			}
@@ -524,7 +529,7 @@ func init() {
 	}
 
 	if *word != "" {
-		wordR, _ = utf8.DecodeRuneInString(*word)
+		wordR = []rune(*word)
 	}
 
 	if *upper && *lower {
@@ -627,7 +632,7 @@ func main() {
 				b.Result.MemStats = fmt.Sprintf("HSys: %d HAlc: %d HIdle: %d HRes: %d", b.MemStats.HeapSys, b.MemStats.HeapAlloc, b.MemStats.HeapIdle, b.MemStats.HeapReleased)
 			}
 			if *word != "" {
-				b.Result.Matchstat = fmt.Sprintf("Match: %d Char ", b.Vessel.Bucket)
+				b.Result.Matchstat = fmt.Sprintf("Match: %d Word ", b.Vessel.Bucket)
 			}
 			if *log != "" {
 				err := addog(fmt.Sprintf("%s%s%s%s\n", "[ ", end.Format(LOG_FORMAT), " ] ", b.Result.SumL()), *log)
