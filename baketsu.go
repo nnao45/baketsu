@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -46,6 +47,9 @@ var (
 	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
 	bil   = scan.Flag("bil", "Unit Billion of threshold(rune)").Int64()
+
+	random  = app.Command("random", "Randum byte to os.Stdin")
+	randomF bool
 
 	packet   = app.Command("packet", "Packet capture mode")
 	packetF  bool
@@ -266,6 +270,9 @@ type Water struct {
 func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 	if *pipe {
 		out = os.Stdout
+	}
+	if randomF {
+		in = rand.Reader
 	}
 	var str string
 	var i int
@@ -500,6 +507,8 @@ func init() {
 		packetF = true
 	case scan.FullCommand():
 		scanF = true
+	case random.FullCommand():
+		randomF = true
 	}
 
 	if *filter {
