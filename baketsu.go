@@ -41,8 +41,7 @@ var (
 
 	scan  = app.Command("scan", "Receive string stream with word scanner")
 	scanF bool
-	word  = scan.Flag("word", "Count match word when scanning").String()
-	wordR []rune
+	word  = scan.Flag("word", "Count match word when scanning").Required().String()
 	cha   = scan.Flag("cha", "Unit Char of threshold(rune)").Int64()
 	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
@@ -276,7 +275,6 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 	}
 	var str string
 	var i int
-	var k int
 
 	if !scanF {
 		w.Size, _ = io.CopyN(out, in, baketsu)
@@ -285,18 +283,7 @@ func (w *Water) Scoop(out io.Writer, in io.Reader, baketsu int64) *Water {
 		for scanner.Scan() {
 			t := scanner.Text()
 			if *word != "" {
-				for _, run := range t {
-					if run == wordR[k] {
-						if k < len(wordR)-1 {
-							k++
-						} else if k == len(wordR)-1 {
-							w.Match++
-							k = 0
-						}
-					} else {
-						k = 0
-					}
-				}
+				w.Match += strings.Count(t, *word)
 			}
 			str = str + t
 			i++
@@ -538,10 +525,6 @@ func init() {
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
-	}
-
-	if *word != "" {
-		wordR = []rune(*word)
 	}
 
 	if *upper && *lower {
