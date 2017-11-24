@@ -10,9 +10,9 @@ baketsu means bucket in japanese.
 - [x] Can result output mirror log file.
 - [x] Can set upper & lower threshold, and count over this.
 - [x] Colorful :rainbow: (you want, can be non-color).
-## char scan mode(count char)
+## char scan mode(word count)
 - [x] Count how many received chars.
-- [x] Can match word count.
+- [x] Can match selected word count.
 ## pcap mode(receive stdin -> receive packet)
 - [x] receive packet in select device.
 - [x] can be promiscuous mode.
