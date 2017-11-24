@@ -47,7 +47,7 @@ var (
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
 	bil   = scan.Flag("bil", "Unit Billion of threshold(rune)").Int64()
 
-	random  = app.Command("random", "Randum byte to os.Stdin")
+	random  = app.Command("random", "Random byte to os.Stdin")
 	randomF bool
 
 	packet   = app.Command("packet", "Packet capture mode")
