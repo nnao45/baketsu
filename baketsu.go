@@ -41,7 +41,7 @@ var (
 
 	scan  = app.Command("scan", "Receive string stream with word scanner")
 	scanF bool
-	word  = scan.Flag("word", "Count match word when scanning").Required().String()
+	word  = scan.Flag("word", "Count match word when scanning").String()
 	cha   = scan.Flag("cha", "Unit Char of threshold(rune)").Int64()
 	hun   = scan.Flag("hun", "Unit Hundred of threshold(rune)").Int64()
 	mil   = scan.Flag("mil", "Unit Million of threshold(rune)").Int64()
