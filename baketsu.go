@@ -5,20 +5,21 @@ import (
 	"bytes"
 	"crypto/rand"
 	"fmt"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/pcap"
-	"github.com/mattn/go-colorable"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"io/ioutil"
 	"math"
+	"net"
 	"os"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/pcap"
+	"github.com/mattn/go-colorable"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -509,12 +510,12 @@ func init() {
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
-		if *srchost != "" && !IsIP(*srchost) {
+		if *srchost != "" && !isIP(*srchost) {
 			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, src host is IPv4 format.")
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
 		}
-		if *dsthost != "" && !IsIP(*dsthost) {
+		if *dsthost != "" && !isIP(*dsthost) {
 			fmt.Fprintln(os.Stderr, "Sorry, when set packet capture fliter, dst host is IPv4 format.")
 			fmt.Fprintln(os.Stderr, "exit 1")
 			os.Exit(1)
@@ -659,9 +660,10 @@ func addog(text string, filename string) error {
 	return err
 }
 
-func IsIP(ip string) (b bool) {
-	if m, _ := regexp.MatchString("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$", ip); !m {
-		return false
+func isIP(ip string) (b bool) {
+	pip := net.ParseIP(ip).To4()
+	if pip != nil {
+		b = true
 	}
-	return true
+	return
 }
